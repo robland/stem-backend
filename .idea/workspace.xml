@@ -5,87 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="01c1e084-2e1c-49f0-ab0d-b976d5b1d287" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/prompt_recherche_emploi" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/admin.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/apps.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/0001_initial.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/0002_alter_customuser_username.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/0003_alter_customuser_phone.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/serializer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/tests.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/urls.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/views.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/prompts.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Chimie_BAC_2024.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Quantum_AI.gif" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_0pQjXse.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_2PQudmM.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_2lH8hTF.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_C9sj9K5.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Dxs5p7Y.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_G7fBZj8.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_GjpVaCh.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Gs3Q0kl.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_L145m5A.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_LpltPSo.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_OcCt4QH.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Qo9VjXT.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_SotEKKK.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_T8msHtp.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_VaOA1Bz.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Xlls3Ss.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZM7j7Iz.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZToTLux.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZrOvQhK.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_egGb0tV.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_enr4Z31.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_iKzJCoS.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_mpA1zzU.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_naEK2LO.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_rVQFYkn.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_sSmJpQM.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_wUkW859.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths_Sg4OvJD.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths_ujnLdRd.pdf.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/WhatsApp_Image_2026-04-01_at_16.37.21.jpeg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_1kxTTbK.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_6bKV1Qz.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_8nXiYHr.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_C4CTI3b.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_EWOJia1.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_JCXEchj.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_dz640oC.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_g9UmCBX.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_hN7gEen.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_uBoAxcX.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_wNJolU2.jpg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/celery.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/celery.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/migrations/0001_initial.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/migrations/0002_alter_exercise_raw_text.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/serializer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/openai_vision.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/openai_vision.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/db.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/openai.response.json" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/openai.response.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,12 +34,12 @@
     &quot;assignee&quot;: &quot;robland&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;git@github.com:robland/StemLearningWithCOT.git&quot;,
-    &quot;accountId&quot;: &quot;611a0683-55d4-425e-ae6b-19b84d99c34c&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "git@github.com/robland/stem-backend.git",
+    "accountId": "611a0683-55d4-425e-ae6b-19b84d99c34c"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -266,7 +187,7 @@
       <workItem from="1776258960081" duration="732000" />
       <workItem from="1777107624163" duration="139000" />
       <workItem from="1777141682169" duration="11154000" />
-      <workItem from="1777583348788" duration="6560000" />
+      <workItem from="1777583348788" duration="6982000" />
     </task>
     <servers />
   </component>

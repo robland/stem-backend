@@ -1,5 +1,6 @@
 stem_learning_app/config/.env
 stem_learning_app/.env
+stem_learning_app/documents/
 .env.*
 .
 __pycache__/
