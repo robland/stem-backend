@@ -1,6 +1,7 @@
+stem_learning_app/config/.env
 stem_learning_app/.env
-.env
 .env.*
+.
 __pycache__/
 *.pyc
 venv/

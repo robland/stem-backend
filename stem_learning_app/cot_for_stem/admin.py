@@ -20,6 +20,21 @@ class StepAdmin(admin.ModelAdmin):
 
 
 @admin.register(QCM)
-class QCM(admin.ModelAdmin):
+class QCMAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Chapter)
+class ChapterAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Solved)
+class Admin(admin.ModelAdmin):
     pass
 

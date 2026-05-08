@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from rest_framework.parsers import FileUploadParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 
 from .services.openai_vision import ExerciseVisionService
 
@@ -70,6 +70,25 @@ def process_exercise(request, pk):
     return HttpResponse(f"Document: {json_object.keys()}")
 
 
+class SubjectViewSet(viewsets.ModelViewSet):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+
+
+class ChapterViewSet(viewsets.ModelViewSet):
+    queryset = Chapter.objects.select_related("subject").all()
+    serializer_class = ChapterSerializer
+
+    def get_queryset(self):
+        queryset = Chapter.objects.select_related("subject").all()
+        subject_id = self.request.query_params.get("subject_id")
+
+        if subject_id:
+            queryset = queryset.filter(subject_id=subject_id)
+
+        return queryset
+
+
 class ExerciseView(APIView):
     """
     Reçoit un fichier (déjà uploadé sur S3 ou autre)
@@ -89,6 +108,11 @@ class ExerciseView(APIView):
             ).data,
             status=status.HTTP_200_OK
         )
+
+
+class ExerciseViewSet(viewsets.ModelViewSet):
+    queryset = Exercise.objects.all().prefetch_related("progress")
+    serializer_class = ExerciseSerializer
 
 
 class StepView(APIView):

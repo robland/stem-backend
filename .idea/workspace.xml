@@ -5,7 +5,87 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="01c1e084-2e1c-49f0-ab0d-b976d5b1d287" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/prompt_recherche_emploi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/apps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/0001_initial.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/0002_alter_customuser_username.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/0003_alter_customuser_phone.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/migrations/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/serializer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/tests.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/accounts/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/prompts.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Chimie_BAC_2024.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Quantum_AI.gif" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_0pQjXse.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_2PQudmM.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_2lH8hTF.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_C9sj9K5.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Dxs5p7Y.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_G7fBZj8.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_GjpVaCh.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Gs3Q0kl.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_L145m5A.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_LpltPSo.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_OcCt4QH.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Qo9VjXT.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_SotEKKK.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_T8msHtp.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_VaOA1Bz.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Xlls3Ss.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZM7j7Iz.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZToTLux.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZrOvQhK.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_egGb0tV.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_enr4Z31.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_iKzJCoS.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_mpA1zzU.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_naEK2LO.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_rVQFYkn.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_sSmJpQM.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_wUkW859.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths_Sg4OvJD.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths_ujnLdRd.pdf.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/WhatsApp_Image_2026-04-01_at_16.37.21.jpeg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_1kxTTbK.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_6bKV1Qz.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_8nXiYHr.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_C4CTI3b.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_EWOJia1.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_JCXEchj.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_dz640oC.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_g9UmCBX.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_hN7gEen.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_uBoAxcX.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_wNJolU2.jpg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/celery.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/celery.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/admin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/migrations/0001_initial.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/migrations/0002_alter_exercise_raw_text.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/serializer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/openai_vision.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services/openai_vision.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/cot_for_stem/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/db.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/openai.response.json" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/openai.response.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,6 +98,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Dockerfile" />
         <option value="Python Script" />
       </list>
     </option>
@@ -49,17 +130,25 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Django Server.StemLearningApp.executor&quot;: &quot;Run&quot;,
+    &quot;Docker.run-docker.executor&quot;: &quot;Run&quot;,
+    &quot;Python.analysis.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenDjangoStructureViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/leokombe/PycharmProjects/StemLearningApp/stem_learning_app&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/leokombe/PycharmProjects/StemLearningApp/docker-compose.yml&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;sqlite&quot;
+    ]
   }
 }</component>
   <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
@@ -70,7 +159,7 @@
       <window_info id="Pull Requests" show_stripe_button="false" />
       <window_info id="Django.Structure" show_stripe_button="false" side_tool="true" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.119531244" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.11067708" />
       <window_info id="Commit" order="1" weight="0.25" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
@@ -80,17 +169,18 @@
       <window_info anchor="bottom" id="Version Control" order="0" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.28149223" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.3609496" />
-      <window_info anchor="bottom" id="Services" order="4" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.24079457" />
+      <window_info anchor="bottom" id="Services" order="4" weight="0.20784883" />
       <window_info anchor="bottom" id="Python Packages" order="5" weight="0.3609496" />
-      <window_info anchor="bottom" id="Python Console" order="6" weight="0.1" />
-      <window_info anchor="bottom" id="Find" order="7" weight="0.6148256" />
+      <window_info anchor="bottom" id="Python Console" order="6" weight="0.31928295" />
+      <window_info anchor="bottom" id="Run" order="7" weight="0.24079457" />
+      <window_info anchor="bottom" id="Find" order="8" weight="0.6053284" />
       <window_info anchor="right" id="Endpoints" show_stripe_button="false" />
       <window_info anchor="right" id="Coverage" show_stripe_button="false" side_tool="true" />
       <window_info anchor="right" id="SciView" show_stripe_button="false" />
       <window_info anchor="right" content_ui="combo" id="Notifications" order="0" weight="0.25" />
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
-      <window_info anchor="right" id="Database" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="2" weight="0.13723958" />
       <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
       <window_info anchor="right" id="Maven" order="4" weight="0.25" />
       <window_info anchor="right" id="Plots" order="5" weight="0.1" />
@@ -98,10 +188,12 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/stem_learning_app" />
+      <recent name="$PROJECT_DIR$/stem_learning_app/config" />
       <recent name="\\wsl.localhost\Ubuntu\home\leokombe\PycharmProjects\StemLearningApp\stem_learning_app\stem_learning_app" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Django Server.StemLearningApp">
     <configuration name="StemLearningApp" type="Python.DjangoServer" factoryName="Django server">
       <module name="StemLearningApp" />
       <option name="ENV_FILES" value="" />
@@ -109,8 +201,10 @@
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="DJANGO_SETTINGS_MODULE" value="config.settings" />
       </envs>
       <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Poetry (StemLearningApp)" />
       <option name="WORKING_DIRECTORY" value="" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -126,6 +220,20 @@
       <option name="customRunCommand" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="run-docker" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker">
+      <deployment type="docker-compose.yml">
+        <settings>
+          <option name="envFilePath" value="$PROJECT_DIR$/.env/dev" />
+          <option name="removeOrphansOnComposeDown" value="false" />
+          <option name="sourceFilePath" value="docker-compose.yml" />
+        </settings>
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Django Server.StemLearningApp" />
+      <item itemvalue="Docker.run-docker" />
+    </list>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -152,6 +260,13 @@
       <workItem from="1770565031708" duration="649000" />
       <workItem from="1770669400015" duration="18702000" />
       <workItem from="1770810141655" duration="4063000" />
+      <workItem from="1770903641520" duration="524000" />
+      <workItem from="1775747562471" duration="12653000" />
+      <workItem from="1776078223272" duration="426000" />
+      <workItem from="1776258960081" duration="732000" />
+      <workItem from="1777107624163" duration="139000" />
+      <workItem from="1777141682169" duration="11154000" />
+      <workItem from="1777583348788" duration="6560000" />
     </task>
     <servers />
   </component>
@@ -160,5 +275,8 @@
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/StemLearningApp$analysis.coverage" NAME="analysis Coverage Results" MODIFIED="1777108185450" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/stem_learning_app/cot_for_stem/services" />
   </component>
 </project>

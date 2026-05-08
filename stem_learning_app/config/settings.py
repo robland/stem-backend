@@ -10,12 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+import dj_database_url
 from dotenv import load_dotenv
 
-import os
 from celery import Celery
-
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +31,7 @@ SECRET_KEY = 'django-insecure-_&t&+%$rbh1n-2#e1seg^y75(@4$8bw2zav^wr5cl%c9d25hmd
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if os.getenv('DEBUG', 1) else False
 
 ALLOWED_HOSTS = []
 
@@ -49,20 +51,19 @@ CELERY_TASK_TIME_LIMIT = 60 * 10  # 10 minutes max par tâche
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://localhost:8000",
 ]
 
-CORS_ALLOW_CREDENTIALS = False
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'accounts',
     'cot_for_stem',
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
-
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -71,10 +72,26 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+# AUTHENTICATION SETTINGS
+AUTH_USER_MODEL = 'accounts.CustomUser'
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+
+    "SIGNING_KEY": SECRET_KEY,
+}
+
+
 REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'STEM API',
@@ -119,13 +136,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
     }
-}
+if not DEBUG:
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    DATABASES['default'] = dj_database_url.config(
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 
 # Password validation

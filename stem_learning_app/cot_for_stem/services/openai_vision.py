@@ -1,7 +1,10 @@
 import base64
+import json
 
 from openai import OpenAI
 from django.conf import settings
+from .prompts import get_prompt
+from ..models import Subject
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -12,6 +15,13 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
+def safe_json_load(s):
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        s = s.replace
+
+
 class ExerciseVisionService:
     """
     Analyse un exercice (image ou PDF) et retourne
@@ -19,77 +29,20 @@ class ExerciseVisionService:
     """
 
     @staticmethod
-    def analyze_exercise(file_url: str, subject: str = "general"):
+    def analyze_exercise(file_url: str):
         """
         file_url : URL publique ou lien S3 de l'image/PDF
         subject  : maths | physique | svt | francais | anglais
         Pour les sujets de maths, les formulaires doivent être au format Latex.
         """
 
-        prompt = f"""
-            Tu es un professeur expert en {subject}.
-            
-            Analyse le présent dans le document fourni.
-            Découpe le document en exercice.
-            Pour chaque exercie, Découpe la résolution en étapes pédagogiques successives.
-            
-            Pour chaque document, retourne STRICTEMENT le JSON suivant:
-            
-            {{
-            "exercise_1":
-                [
-                    {{
-                          "step_number": 1,
-                          "objective": "...",
-                          "question": "...",
-                          "choices": ["A", "B", "C", "D"],
-                          "correct_answer": "A",
-                          "explanation": "..."
-                        }},
-                    {{
-                          "step_number": 2,
-                          "objective": "...",
-                          "question": "...",
-                          "choices": ["A", "B", "C", "D"],
-                          "correct_answer": "A",
-                          "explanation": "..."
-                        }},
-                        
-                ],
-            "exercise_2":
-                [
-                    {{
-                          "step_number": 1,
-                          "objective": "...",
-                          "question": "...",
-                          "choices": ["A", "B", "C", "D"],
-                          "correct_answer": "A",
-                          "explanation": "..."
-                        }},
-                    {{
-                          "step_number": 2,
-                          "objective": "...",
-                          "question": "...",
-                          "choices": ["A", "B", "C", "D"],
-                          "correct_answer": "A",
-                          "explanation": "..."
-                        }},
-                        
-                ],    
-                
-            }}
-            
-            Contraintes :
-            - Niveau lycée
-            - Raisonnement progressif
-            - QCM pédagogiques (pas triviaux)
-            - Aucun texte hors JSON
-        """
         # Path to your image
         image_path = file_url
 
         # Getting the Base64 string
         base64_image = encode_image(image_path)
+
+        subjects = {s.name: [i.name for i in s.chapters.all()] for s in Subject.objects.all()}
 
         response = client.responses.create(
             model="gpt-4.1-mini",
@@ -97,7 +50,10 @@ class ExerciseVisionService:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "input_text", "text": prompt},
+                        {
+                            "type": "input_text",
+                            "text": get_prompt(subjects)
+                        },
                         {
                             "type": "input_image",
                             "image_url": f"data:image/jpeg;base64,{base64_image}"
@@ -105,7 +61,7 @@ class ExerciseVisionService:
                     ]
                 }
             ],
-            max_output_tokens=4800
+            max_output_tokens=5096
         )
 
         return response.output_text

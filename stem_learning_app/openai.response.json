@@ -1,123 +1,150 @@
-{
-  "exercise_1": [
-    {
-      "step_number": 1,
-      "objective": "Valider qu’un couple donné est solution d’une équation diophantienne.",
-      "question": "Le couple (5, -2) est-il solution de l'équation 3x + 7y = 1 ?",
-      "choices": [
-        "A: Oui, car 3*5 + 7*(-2) = 1",
-        "B: Non, car 3*5 + 7*(-2) ≠ 1",
-        "C: Oui, car 5 + (-2) = 1",
-        "D: Non, car 3*5 - 7*2 = 1"
-      ],
-      "correct_answer": "A",
-      "explanation": "Calculer 3*5 + 7*(-2) = 15 - 14 = 1, donc le couple est solution."
+[
+  {
+    "order": 0,
+    "statement": "<p class=\"exercise-intro\">Voici un exercice sur la cinétique chimique et les équilibres réactionnels.</p><p class=\"exercise-question\">Quelle affirmation est correcte concernant l'effet d'un catalyseur sur le rendement d'une réaction chimique ?</p>",
+    "subject": "Mathématiques",
+    "chapter": "arithmétique",
+    "title": "Effet du catalyseur sur le rendement",
+    "level": "Facile",
+    "concepts_used": ["catalyse", "rendement", "réaction chimique"],
+    "intuition": {
+      "mental_image": "Imagine une route pleine d'obstacles. Un catalyseur agit comme un tunnel qui raccourcit le chemin sans changer la destination finale.",
+      "simple_example": "Si tu dois aller à l'école en passant par un chemin difficile, un raccourci te fait gagner du temps mais tu arrives toujours à l'école."
     },
-    {
-      "step_number": 2,
-      "objective": "Résoudre une équation diophantienne linéaire 3x + 7y = 1 dans ℤ×ℤ.",
-      "question": "Quelle est la forme générale des solutions de 3x + 7y = 1 ?",
-      "choices": [
-        "A: (x, y) = (5 - 7k, -2 + 3k) où k est un entier relatif",
-        "B: (x, y) = (5 + 7k, -2 - 3k) où k est un entier relatif",
-        "C: (x, y) = (5k, -2k) où k est un entier relatif",
-        "D: (x, y) = (7k, 3k) où k est un entier relatif"
-      ],
-      "correct_answer": "A",
-      "explanation": "Solution générale d'une équation diophantienne est de la forme (x0 - b*k, y0 + a*k) ici a=3,b=7, solution particulière (5,-2)."
+    "formula_recall": [
+      {
+        "formula_latex": "$$ \\text{Rendement} = \\frac{\\text{quantité obtenue}}{\\text{quantité théorique}} \\times 100 $$",
+        "explanation_simple": "Le rendement mesure la quantité de produit formé comparée à la quantité qu'on pourrait obtenir si la réaction était parfaite."
+      }
+    ],
+    "steps": [
+      {
+        "step_number": 1,
+        "step_type": "comprehension",
+        "objective": "Comprendre ce que fait un catalyseur dans une réaction chimique.",
+        "question": "Un catalyseur dans une réaction chimique :",
+        "choices": [
+          "Augmente le rendement de la réaction.",
+          "Diminue le rendement de la réaction.",
+          "Accélère la vitesse de la réaction sans changer le rendement.",
+          "Change les produits de la réaction."
+        ],
+        "correct_answer": 2,
+        "explanation": "Le catalyseur facilite la réaction en la rendant plus rapide, mais il ne modifie pas la quantité finale de produit, donc le rendement reste le même."
+      }
+    ]
+  },
+  {
+    "order": 1,
+    "statement": "<p class=\"exercise-intro\">Examinons la dépendance de l'abaissement de température de congélation sur la masse molaire du soluté.</p><p class=\"exercise-question\">L'abaissement de la température de congélation d'une solution diluée non-électrolyte dépend-il de la masse molaire du soluté ?</p>",
+    "subject": "Mathématiques",
+    "chapter": "arithmétique",
+    "title": "Abaissement cryoscopique et masse molaire",
+    "level": "Moyen",
+    "concepts_used": ["solution diluée", "abaissement cryoscopique", "masse molaire"],
+    "intuition": {
+      "mental_image": "Imagine faire fondre de la glace : plus tu mets de sel, plus la glace fond facilement, peu importe la taille des grains de sel.",
+      "simple_example": "Si tu mets du sucre dans de l'eau, cela abaisse la température à laquelle l'eau gèle, mais ce n'est pas la taille du sucre qui compte, c’est combien tu en mets."
     },
-    {
-      "step_number": 3,
-      "objective": "Montrer la forme des solutions de l’équation 3x + 7y = 10^n pour n entier naturel.",
-      "question": "Quelles sont les solutions de l’équation (E): 3x + 7y = 10^n ?",
-      "choices": [
-        "A: (x,y) = (5×10^n - 7k, -2×10^n + 3k), k entier relatif",
-        "B: (x,y) = (5×10^n + 7k, -2×10^n - 3k), k entier relatif",
-        "C: (x,y) = (10^n, 0)",
-        "D: (x,y) = (0, 10^n)"
-      ],
-      "correct_answer": "A",
-      "explanation": "En multipliant la solution particulière de 3x + 7y=1 par 10^n et en ajoutant la solution homogène de la forme (7k,-3k)."
+    "formula_recall": [
+      {
+        "formula_latex": "$$ \\Delta T_f = k_f \\times m $$",
+        "explanation_simple": "L'abaissement de la température de congélation $$\\Delta T_f$$ est proportionnel à la molalité $$m$$ de la solution, indépendamment de la taille des molécules."
+      },
+      {
+        "formula_latex": "$$ m = \\frac{n_{\\text{soluté}}}{m_{\\text{solvant}}} $$",
+        "explanation_simple": "La molalité $$m$$ est le nombre de moles de soluté $$n$$ par kilogramme de solvant $$m$$."
+      }
+    ],
+    "steps": [
+      {
+        "step_number": 1,
+        "step_type": "comprehension",
+        "objective": "Comprendre la relation entre l'abaissement de la température de congélation et la masse molaire.",
+        "question": "L'abaissement de la température de congélation $$\\Delta T_f$$ d'une solution dépend principalement :",
+        "choices": [
+          "De la masse molaire du soluté.",
+          "De la concentration en nombre de particules du soluté.",
+          "De la nature chimique du solvant uniquement.",
+          "De la masse totale de la solution."
+        ],
+        "correct_answer": 1,
+        "explanation": "Ce qui compte est le nombre de particules, donc la concentration, pas la masse molaire qui est une propriété des molécules."
+      }
+    ]
+  },
+  {
+    "order": 2,
+    "statement": "<p class=\"exercise-intro\">Analysons comment la température influe sur la vitesse d'une réaction exothermique.</p><p class=\"exercise-question\">La vitesse d'une réaction exothermique augmente-t-elle lorsqu'on élève la température du milieu réactionnel ?</p>",
+    "subject": "Mathématiques",
+    "chapter": "arithmétique",
+    "title": "Influence de la température sur la vitesse de réaction",
+    "level": "Facile",
+    "concepts_used": ["vitesse de réaction", "température", "réaction exothermique"],
+    "intuition": {
+      "mental_image": "Imagine des personnes qui se déplacent dans une pièce : plus il fait chaud, plus elles bougent rapidement.",
+      "simple_example": "Quand tu chauffes une soupe, la cuisson s'accélère parce que les molécules bougent plus vite."
     },
-    {
-      "step_number": 4,
-      "objective": "Montrer une propriété de divisibilité impliquant 100 et 2^7.",
-      "question": "Quelle affirmation est vraie concernant la divisibilité ?",
-      "choices": [
-        "A: 100 est divisible par 2^7",
-        "B: 100 n’est pas divisible par 2^7",
-        "C: 100 est un multiple de 7",
-        "D: 2^7 divise toujours 10^n"
-      ],
-      "correct_answer": "B",
-      "explanation": "100 = 2^2 × 5^2, donc 100 n’est pas divisible par 2^7."
+    "formula_recall": [
+      {
+        "formula_latex": "$$ v = k \\times [\\text{réactifs}] $$",
+        "explanation_simple": "La vitesse $$v$$ est proportionnelle à une constante $$k$$ qui dépend de la température et à la concentration des réactifs."
+      },
+      {
+        "formula_latex": "$$ k = A \\times e^{-\\frac{E_a}{RT}} $$",
+        "explanation_simple": "La constante de vitesse $$k$$ augmente quand la température $$T$$ augmente, car la fraction exponentielle devient plus grande."
+      }
+    ],
+    "steps": [
+      {
+        "step_number": 1,
+        "step_type": "understanding",
+        "objective": "Comprendre l'effet de la température sur la constante de vitesse.",
+        "question": "Lorsque la température augmente, la constante de vitesse $$k$$ :",
+        "choices": [
+          "Diminue car $$e^{-\\frac{E_a}{RT}}$$ diminue.",
+          "Reste constante.",
+          "Augmente car $$e^{-\\frac{E_a}{RT}}$$ augmente.",
+          "Devient nulle."
+        ],
+        "correct_answer": 2,
+        "explanation": "L'expression $$e^{-\\frac{E_a}{RT}}$$ devient plus grande car le dénominateur augmente, donc $$k$$ augmente."
+      }
+    ]
+  },
+  {
+    "order": 3,
+    "statement": "<p class=\"exercise-intro\">Étudions la nature de la particule émise lors d'une radioactivité $$\\beta^-$$.</p><p class=\"exercise-question\">Lors d’une radioactivité $$\\beta^-$$, la particule émise est :</p>",
+    "subject": "Mathématiques",
+    "chapter": "arithmétique",
+    "title": "Radioactivité $$\\beta^-$$ et particules émises",
+    "level": "Facile",
+    "concepts_used": ["radioactivité", "particule bêta", "électron"],
+    "intuition": {
+      "mental_image": "Imagine qu’un neutron se transforme en proton en expulsant une petite bille : cette bille est l’électron.",
+      "simple_example": "C’est comme si une boule se divise en deux, et l’une des petites boules part rapidement."
     },
-    {
-      "step_number": 5,
-      "objective": "Utiliser la condition qu’un couple (x,y) solution de G implique une propriété sur 3x^2 modulo 7.",
-      "question": "Si (x,y) est solution de G, que peut-on dire de 3x^2 modulo 7 ?",
-      "choices": [
-        "A: 3x^2 ≡ 2^n mod 7",
-        "B: 3x^2 ≡ 0 mod 7",
-        "C: 3x^2 est divisible par 7",
-        "D: 3x^2 ≡ 1 mod 7"
-      ],
-      "correct_answer": "A",
-      "explanation": "D’après l’énoncé, on doit montrer que 3x^2 = 2^n [7] pour (x,y) solution."
-    },
-    {
-      "step_number": 6,
-      "objective": "Analyser les restes possibles de 2^n modulo 7.",
-      "question": "Quels sont les restes possibles de 2^n modulo 7 ?",
-      "choices": [
-        "A: 1, 2, 4",
-        "B: 1, 2, 4, 8",
-        "C: 1, 2, 3, 4, 5, 6",
-        "D: 1, 2, 4, 5, 6"
-      ],
-      "correct_answer": "A",
-      "explanation": "Les puissances de 2 modulo 7 suivent le cycle : 1,2,4,1,2,4,..."
-    },
-    {
-      "step_number": 7,
-      "objective": "Utiliser les restes de 3x^2 modulo 7 pour montrer qu’il n’existe pas de solution à l’équation (G).",
-      "question": "Quels sont les restes possibles de 3x^2 modulo 7, et cela permet-il une solution à (G) ?",
-      "choices": [
-        "A: Les restes sont 0,3,5,6 et aucun ne correspond aux restes de 2^n. Donc pas de solutions.",
-        "B: Les restes sont 0,1,2 et donc il y a solution.",
-        "C: Les restes sont 1,2,4 et il y a solution.",
-        "D: Les restes couvrent tous les cas possibles, donc solutions possibles."
-      ],
-      "correct_answer": "A",
-      "explanation": "Les restes de 3x^2 mod 7 ne coïncident pas avec ceux de 2^n mod 7 d’après le tableau, donc pas de solution."
-    }
-  ],
-  "exercise_2": [
-    {
-      "step_number": 1,
-      "objective": "Construire un triangle équilatéral avec une base donnée et placer les points symétriques demandés.",
-      "question": "Quelle est la bonne méthode pour construire un triangle équilatéral OBC avec BC horizontal et de longueur 5 cm, et placer A et D symétriques respectivement des points C et B par rapport à O ?",
-      "choices": [
-        "A: Tracer BC horizontal de 5 cm, puis construire A tel que OBC soit équilatéral, puis D symétrique de B par rapport à O",
-        "B: Tracer OB horizontal de 5 cm, puis construire C, puis placer A et D partout",
-        "C: Construire un triangle quelconque et poser A, D au hasard",
-        "D: Tracer BC vertical et construire A et D sans symétries"
-      ],
-      "correct_answer": "A",
-      "explanation": "La construction commence par la base BC horizontale de 5 cm, puis on place A pour avoir un triangle équilatéral, enfin on place symétriquement A et D."
-    },
-    {
-      "step_number": 2,
-      "objective": "Identifier les points milieux demandés dans la figure construite.",
-      "question": "Quels sont les points milieux I,J,H,L des segments AB, BC, CD et DA, respectivement ?",
-      "choices": [
-        "A: I milieu de AB, J milieu de BC, H milieu de CD, L milieu de DA",
-        "B: I milieu de BC, J milieu de CD, H milieu de DA, L milieu de AB",
-        "C: I milieu de DA, J milieu de AB, H milieu de BC, L milieu de CD",
-        "D: I milieu de CD, J milieu de DA, H milieu de AB, L milieu de BC"
-      ],
-      "correct_answer": "A",
-      "explanation": "L’énoncé demande explicitement ces milieux, il faut les identifier correctement pour la suite."
-    }
-  ]
-}
+    "formula_recall": [
+      {
+        "formula_latex": "$$ n \\rightarrow p + e^{-} + \\bar{\\nu}_e $$",
+        "explanation_simple": "Lors d’une désintégration $$\\beta^-$$, un neutron $$n$$ se transforme en proton $$p$$, un électron $$e^-$$ est émis avec un antineutrino $$\\bar{\\nu}_e$$."
+      }
+    ],
+    "steps": [
+      {
+        "step_number": 1,
+        "step_type": "recognition",
+        "objective": "Identifier la particule émise lors d'une radioactivité $$\\beta^-$$.",
+        "question": "La particule émise lors d'une radioactivité $$\\beta^-$$ est :",
+        "choices": [
+          "Un proton",
+          "Un électron",
+          "Un neutron",
+          "Un positron"
+        ],
+        "correct_answer": 1,
+        "explanation": "La radioactivité $$\\beta^-$$ correspond à l’émission d’un électron."
+      }
+    ]
+  }
+]

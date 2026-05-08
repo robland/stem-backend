@@ -16,13 +16,21 @@ Including another URLconf
 """
 
 from django.urls import path
+from rest_framework.routers import DefaultRouter
+
 from .views import *
 
 urlpatterns = [
     path('upload/document/', DocumentUploadView.as_view(), name='upload_document'),
-    path('exercise/', ExerciseView.as_view(), name='exercises'),
+    path('exercises/', ExerciseView.as_view(), name='exercises'),
     path('step/<str:id>/', StepView.as_view(), name='step'),
     path('qcm/<str:id>/', QCMView.as_view(), name='qcm'),
     path('document_processing/<str:pk>/', process_document, name="process_document"),
     path('exercise_processing/<str:pk>/', process_exercise, name="process_exercise")
 ]
+
+router = DefaultRouter()
+router.register(r'subjects', SubjectViewSet)
+router.register(r'chapters', ChapterViewSet)
+router.register(r'all-exercises', ExerciseViewSet)
+urlpatterns += router.urls
