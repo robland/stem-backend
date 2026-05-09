@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="01c1e084-2e1c-49f0-ab0d-b976d5b1d287" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,7 +93,7 @@
       <window_info anchor="bottom" id="Version Control" order="0" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.28149223" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.2650194" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.5576551" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.20784883" />
       <window_info anchor="bottom" id="Python Packages" order="5" weight="0.3609496" />
       <window_info anchor="bottom" id="Python Console" order="6" weight="0.82414216" />
