@@ -26,18 +26,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_&t&+%$rbh1n-2#e1seg^y75(@4$8bw2zav^wr5cl%c9d25hmd'
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if os.getenv('DEBUG', 1) else False
+DEBUG = True if os.getenv('DEBUG') == '1' else False
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-_&t&+%$rbh1n-2#e1seg^y75(@4$8bw2zav^wr5cl%c9d25hmd')
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+BACKEND_URL = os.getenv("BACKEND_URL", None)
+ALLOWED_HOSTS = ["http://localhost:8000/", '127.0.0.1', 'https://ceurqcpcugdboqwlijnz.supabase.co']
 
-ALLOWED_HOSTS = []
-
+if BACKEND_URL:
+    ALLOWED_HOSTS.append(BACKEND_URL)
 
 # Celery Config
-CELERY_BROKER_URL = "amqp://guest:guest@localhost:5672//"
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "amqp://guest:guest@localhost:5672//")
+MEDIA_URL = os.getenv("MEDIA_URL", "documents/")
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
@@ -48,9 +50,8 @@ CELERY_TIMEZONE = "Europe/Paris"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 60 * 10  # 10 minutes max par tâche
 
-
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    FRONTEND_URL,
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -70,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages'
 ]
 
 # AUTHENTICATION SETTINGS
@@ -142,8 +144,9 @@ DATABASES = {
                 'NAME': BASE_DIR / 'db.sqlite3',
             }
     }
-if not DEBUG:
-    DATABASE_URL = os.getenv("DATABASE_URL")
+
+DATABASE_URL = os.getenv("DATABASE_URL", None)
+if DATABASE_URL:
     DATABASES['default'] = dj_database_url.config(
         conn_max_age=600,
         conn_health_checks=True,
@@ -152,6 +155,9 @@ if not DEBUG:
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+
+
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -184,8 +190,32 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
 
+SUPABASE_URL = os.getenv('SUPABASE_URL', None)
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', 'your-anon-public-key')
+SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'BUCKET_URL')
+SUPABASE_MEDIA_BUCKET = os.getenv('SUPABASE_MEDIA_BUCKET', 'media')
+SUPABASE_STATIC_BUCKET = os.getenv('SUPABASE_STATIC_BUCKET', 'static')
+
+
+USE_INTERNAL_STATIC = True
+
+if SUPABASE_URL:
+    # Static files URL for Supabase
+    STATIC_URL = f'{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STATIC_BUCKET}/'
+
+    # Media files URL for Supabase
+    MEDIA_URL = f'{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_MEDIA_BUCKET}/'
+
+if not USE_INTERNAL_STATIC:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django_supabase_storage.SupabaseMediaStorage',
+        },
+        'staticfiles': {'BACKEND': 'django_supabase_storage.SupabaseStaticStorage'}
+    }
+
+STATIC_URL = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

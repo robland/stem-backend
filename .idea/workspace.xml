@@ -5,7 +5,61 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="01c1e084-2e1c-49f0-ab0d-b976d5b1d287" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/render.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/config/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/stem_learning_app/config/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Chimie_BAC_2024.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Quantum_AI.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_0pQjXse.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_2PQudmM.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_2lH8hTF.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_C9sj9K5.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Dxs5p7Y.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_G7fBZj8.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_GjpVaCh.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Gs3Q0kl.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_L145m5A.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_LpltPSo.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_OcCt4QH.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Qo9VjXT.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_SotEKKK.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_T8msHtp.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_VaOA1Bz.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_Xlls3Ss.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZM7j7Iz.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZToTLux.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_ZrOvQhK.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_egGb0tV.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_enr4Z31.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_iKzJCoS.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_mpA1zzU.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_naEK2LO.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_rVQFYkn.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_sSmJpQM.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-20_at_14-09-52_corrigé_Ciam_TLE_SE_maths_wUkW859.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths_Sg4OvJD.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/Screenshot_2026-02-21_at_19-24-24_corrigé_Ciam_TLE_SE_maths_ujnLdRd.pdf.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/WhatsApp_Image_2026-04-01_at_16.37.21.jpeg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_1kxTTbK.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_6bKV1Qz.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_8nXiYHr.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_C4CTI3b.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_EWOJia1.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_JCXEchj.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_dz640oC.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_g9UmCBX.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_hN7gEen.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_uBoAxcX.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stem_learning_app/documents/bac_congo_maths_wNJolU2.jpg" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,12 +87,12 @@
     &quot;assignee&quot;: &quot;robland&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "git@github.com/robland/stem-backend.git",
-    "accountId": "611a0683-55d4-425e-ae6b-19b84d99c34c"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com/robland/stem-backend.git&quot;,
+    &quot;accountId&quot;: &quot;611a0683-55d4-425e-ae6b-19b84d99c34c&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -68,6 +122,9 @@
   "keyToStringList": {
     "DatabaseDriversLRU": [
       "sqlite"
+    ],
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "yaml"
     ]
   }
 }]]></component>
@@ -79,7 +136,7 @@
       <window_info id="Pull Requests" show_stripe_button="false" />
       <window_info id="Django.Structure" show_stripe_button="false" side_tool="true" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.11067708" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.11588542" />
       <window_info id="Commit" order="1" weight="0.25" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
@@ -89,11 +146,11 @@
       <window_info anchor="bottom" id="Version Control" order="0" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.28149223" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.36676356" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.2650194" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.20784883" />
       <window_info anchor="bottom" id="Python Packages" order="5" weight="0.3609496" />
-      <window_info anchor="bottom" id="Python Console" order="6" weight="0.31928295" />
-      <window_info anchor="bottom" id="Run" order="7" weight="0.24079457" />
+      <window_info anchor="bottom" id="Python Console" order="6" weight="0.82414216" />
+      <window_info anchor="bottom" id="Run" order="7" weight="0.2650194" />
       <window_info anchor="bottom" id="Find" order="8" weight="0.6053284" />
       <window_info anchor="right" id="Endpoints" show_stripe_button="false" />
       <window_info anchor="right" id="Coverage" show_stripe_button="false" side_tool="true" />
@@ -124,7 +181,6 @@
         <env name="DJANGO_SETTINGS_MODULE" value="config.settings" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Poetry (StemLearningApp)" />
       <option name="WORKING_DIRECTORY" value="" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -158,8 +214,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PY-241.18034.53" />
-        <option value="bundled-python-sdk-13a8072ce35e-2767605e8bc2-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-241.18034.53" />
+        <option value="bundled-python-sdk-09665e90c3a7-b11f5e8da5ad-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-233.15026.15" />
       </set>
     </attachedChunks>
   </component>
@@ -186,7 +241,8 @@
       <workItem from="1776258960081" duration="732000" />
       <workItem from="1777107624163" duration="139000" />
       <workItem from="1777141682169" duration="11154000" />
-      <workItem from="1777583348788" duration="9283000" />
+      <workItem from="1777583348788" duration="11935000" />
+      <workItem from="1778256527158" duration="1819000" />
     </task>
     <servers />
   </component>
