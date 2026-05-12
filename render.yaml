@@ -4,7 +4,7 @@ services:
     name: stem-backend
     runtime: python
     buildCommand: './build.sh'
-    startCommand: 'poetry run python -m gunicorn ./stem_learning_app.config.asgi:application -k uvicorn.workers.UvicornWorker'
+    startCommand: 'pwd && poetry run python -m gunicorn ./stem_learning_app.config.asgi:application -k uvicorn.workers.UvicornWorker'
     envVars:
       - key: WEB_CONCURRENCY
         value: 4
