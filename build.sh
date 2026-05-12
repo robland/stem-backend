@@ -10,3 +10,5 @@ poetry run python  stem_learning_app/manage.py collectstatic --no-input
 poetry run python  stem_learning_app/manage.py migrate
 
 cd stem_learning_app/
+
+pwd
