@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from .models import *
 
@@ -43,6 +44,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
         model = Exercise
         fields = ["id", "title", "chapter", "solved", "statement", "level", "raw_text"]
 
+    @extend_schema_field(serializers.DictField(allow_null=True))
     def get_solved(self, obj):
 
         request = self.context.get('request')
@@ -74,6 +76,7 @@ class StepSerializer(serializers.ModelSerializer):
 
 
 class QCMSerializer(serializers.ModelSerializer):
+    # La bonne réponse n'est jamais exposée (cf. README §6.4).
     class Meta:
         model = QCM
-        fields = "__all__"
+        exclude = ["correct_choice"]

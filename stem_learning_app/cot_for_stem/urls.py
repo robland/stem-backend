@@ -26,7 +26,6 @@ urlpatterns = [
     path('step/<str:id>/', StepView.as_view(), name='step'),
     path('qcm/<str:id>/', QCMView.as_view(), name='qcm'),
     path('document_processing/<str:pk>/', process_document, name="process_document"),
-    path('exercise_processing/<str:pk>/', process_exercise, name="process_exercise")
 ]
 
 router = DefaultRouter()

@@ -20,9 +20,6 @@ def analyze_document(document_id):
     )
     # json_text = raw_text[7:len(raw_text)-3].strip()
     json_text = raw_text.strip()
-    with open("./openai.response.json", "w") as f:
-        f.write(json_text)
-
     json_object = json.loads(json_text)
 
     for index, value in enumerate(json_object):

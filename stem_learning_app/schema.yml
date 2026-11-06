@@ -2,24 +2,205 @@ openapi: 3.0.3
 info:
   title: STEM API
   version: 1.0.0
-  description: Provide an App to add young student to understand STEM with chain of
-    thoughts methodology.
+  description: Apprentissage guidé étape par étape (chain of thought) pour collégiens
+    et lycéens.
 paths:
-  /api/stem/exercise/:
-    get:
-      operationId: stem_exercise_retrieve
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Renvoie l'access token ; le refresh token est posé en cookie httpOnly.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Invalide le refresh token (body ou cookie) et supprime le cookie.
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
       description: |-
-        Reçoit un fichier (déjà uploadé sur S3 ou autre)
-        et déclenche l’analyse pédagogique.
+        Accepte le refresh token dans le body (mobile) ou dans le cookie (web).
+        Le nouveau refresh token (rotation) est renvoyé par le même canal.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /api/stem/all-exercises/:
+    get:
+      operationId: stem_all_exercises_list
       tags:
       - stem
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+      - jwtAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exercise'
+          description: ''
+  /api/stem/all-exercises/{id}/:
+    get:
+      operationId: stem_all_exercises_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+          description: ''
+  /api/stem/chapters/:
+    get:
+      operationId: stem_chapters_list
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chapter'
+          description: ''
+  /api/stem/chapters/{id}/:
+    get:
+      operationId: stem_chapters_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) chapter.
+        required: true
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chapter'
+          description: ''
+  /api/stem/document_processing/{id}/:
+    post:
+      operationId: stem_document_processing_create
+      description: Relance l'analyse d'un document (administration).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
           description: No response body
+  /api/stem/exercises/:
+    get:
+      operationId: stem_exercises_retrieve
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+          description: ''
   /api/stem/qcm/{id}/:
     get:
       operationId: stem_qcm_retrieve
@@ -32,12 +213,14 @@ paths:
       tags:
       - stem
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+      - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QCM'
+          description: ''
   /api/stem/step/{id}/:
     get:
       operationId: stem_step_retrieve
@@ -50,12 +233,52 @@ paths:
       tags:
       - stem
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+      - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Step'
+          description: ''
+  /api/stem/subjects/:
+    get:
+      operationId: stem_subjects_list
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/stem/subjects/{id}/:
+    get:
+      operationId: stem_subjects_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) subject.
+        required: true
+      tags:
+      - stem
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
   /api/stem/upload/document/:
     post:
       operationId: stem_upload_document_create
@@ -63,20 +286,12 @@ paths:
       - stem
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UploadDocument'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UploadDocument'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UploadDocument'
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+      - jwtAuth: []
       responses:
         '200':
           content:
@@ -86,6 +301,59 @@ paths:
           description: ''
 components:
   schemas:
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/Subject'
+          readOnly: true
+        subject_id:
+          type: string
+          format: uuid
+          writeOnly: true
+      required:
+      - id
+      - name
+      - subject
+      - subject_id
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        chapter:
+          allOf:
+          - $ref: '#/components/schemas/Chapter'
+          readOnly: true
+        solved:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        statement:
+          type: string
+        level:
+          type: string
+          maxLength: 50
+        raw_text: {}
+      required:
+      - chapter
+      - id
+      - raw_text
+      - solved
+      - statement
     FileTypeEnum:
       enum:
       - image
@@ -108,6 +376,111 @@ components:
         * `generating` - Génération QCM
         * `done` - Terminé
         * `error` - Erreur
+    QCM:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        question:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        step:
+          type: integer
+      required:
+      - created_at
+      - id
+      - question
+      - step
+    Register:
+      type: object
+      description: 'Seules données personnelles collectées : le téléphone. `username`
+        est un pseudo d''affichage.'
+      properties:
+        phone:
+          type: string
+          maxLength: 25
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - phone
+      - username
+    Step:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        objective:
+          type: string
+        explanation:
+          type: string
+        qcm:
+          type: integer
+      required:
+      - id
+      - objective
+      - qcm
+    Subject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 25
+        chapters:
+          type: array
+          items:
+            type: string
+      required:
+      - chapters
+      - id
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
     UploadDocument:
       type: object
       properties:
@@ -118,14 +491,14 @@ components:
           $ref: '#/components/schemas/FileTypeEnum'
         processing_status:
           $ref: '#/components/schemas/ProcessingStatusEnum'
+        user:
+          type: integer
+          nullable: true
       required:
       - file
       - file_type
   securitySchemes:
-    basicAuth:
+    jwtAuth:
       type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+      scheme: bearer
+      bearerFormat: JWT

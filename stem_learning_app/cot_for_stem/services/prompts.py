@@ -114,7 +114,7 @@ prompt_v1 = f"""
     - Aucune sortie hors JSON.
     """
 
-prompt_v2 = """
+prompt_v2 = r"""
 Tu es un professeur expert en maths, spécialisé dans l'enseignement niveau Terminale.
 
 OBJECTIF :

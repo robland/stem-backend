@@ -6,20 +6,15 @@ from django.conf import settings
 from .prompts import get_prompt
 from ..models import Subject
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+def get_client():
+    return OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 # Function to encode the image
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
-
-
-def safe_json_load(s):
-    try:
-        return json.loads(s)
-    except json.JSONDecodeError:
-        s = s.replace
 
 
 class ExerciseVisionService:
@@ -44,7 +39,7 @@ class ExerciseVisionService:
 
         subjects = {s.name: [i.name for i in s.chapters.all()] for s in Subject.objects.all()}
 
-        response = client.responses.create(
+        response = get_client().responses.create(
             model="gpt-4.1-mini",
             input=[
                 {
