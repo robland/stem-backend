@@ -23,6 +23,7 @@ dependencies = [
     "gunicorn>=23,<27",
     "pydantic>=2.11,<3",
     "pypdfium2>=4.30,<6",
+    "sympy>=1.13,<2",
 ]
 
 [dependency-groups]

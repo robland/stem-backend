@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 from pydantic import ValidationError
 
+from grading.verify import verify_exercise
 from ingestion.services import seconds_until_quota_reset, start_of_today
 from llm.exceptions import LLMError, LLMRefusal
 from llm.schemas import SCHEMA_VERSION, ExerciseContent
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 ERROR_REFUSED = "Cet énoncé ne peut pas être transformé en parcours."
 ERROR_LLM = "La préparation du parcours a échoué. Réessaie dans quelques minutes."
+ERROR_NEEDS_REVIEW = "Ce parcours doit être vérifié avant de t'être proposé."
 
 
 class GenerationRefused(Exception):
@@ -117,30 +119,43 @@ def run_generation(exercise_id):
         return _fail(exercise, ERROR_LLM)
 
     chapter = exercise.chapter.name if exercise.chapter else (exercise.source.chapter_hint or "")
-    try:
-        result = generate_exercise(
-            statement=statement, subject=exercise.subject.code, level=exercise.level, chapter=chapter
-        )
-    except LLMRefusal:
-        return _fail(exercise, ERROR_REFUSED)
-    except LLMError:
-        logger.exception("Génération en échec pour le parcours %s", exercise.id)
-        return _fail(exercise, ERROR_LLM)
+    issues = []
+    for _ in range(settings.GENERATION_ATTEMPTS):
+        try:
+            result = generate_exercise(
+                statement=statement, subject=exercise.subject.code, level=exercise.level, chapter=chapter,
+                corrections=issues,
+            )
+        except LLMRefusal:
+            return _fail(exercise, ERROR_REFUSED)
+        except LLMError:
+            logger.exception("Génération en échec pour le parcours %s", exercise.id)
+            return _fail(exercise, ERROR_LLM)
+        content = build_content(result.output, statement)
+        # Justesse des réponses attendues (SymPy, chimie, unités) ; régénération ciblée sinon.
+        issues = verify_exercise(content)
+        if not issues:
+            break
 
-    content = build_content(result.output, statement)
-    exercise.title = content["title"]
-    exercise.content = content
+    exercise.title = content.title
+    exercise.content = content.model_dump(mode="json")
     exercise.schema_version = SCHEMA_VERSION
     exercise.prompt_id = result.prompt_id
-    exercise.generation_status = Exercise.GenerationStatus.READY
+    exercise.review_notes = "\n".join(issues)
+    if issues:
+        logger.warning("Parcours %s à revoir : %d problème(s) après revérification", exercise.id, len(issues))
+        exercise.generation_status = Exercise.GenerationStatus.NEEDS_REVIEW
+        exercise.error_message = ERROR_NEEDS_REVIEW
+    else:
+        exercise.generation_status = Exercise.GenerationStatus.READY
     exercise.save()
 
 
 def build_content(generated, statement):
-    """Contenu stocké : sortie du LLM + énoncé validé par l'élève, revalidé en entier."""
+    """Contenu stocké (ExerciseContent) : sortie du LLM + énoncé validé par l'élève, revalidé en entier."""
     data = {"schema_version": SCHEMA_VERSION, "statement": statement, **generated.model_dump(mode="json")}
     try:
-        return ExerciseContent.model_validate(data).model_dump(mode="json")
+        return ExerciseContent.model_validate(data)
     except ValidationError:
         # L'énoncé a déjà été validé par les mêmes règles : ne devrait jamais arriver.
         logger.exception("Contenu de parcours invalide")

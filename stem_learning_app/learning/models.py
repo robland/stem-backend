@@ -38,6 +38,8 @@ class Exercise(models.Model):
     )
     # Message destiné à l'élève (jamais de détail technique).
     error_message = models.TextField(blank=True)
+    # Problèmes relevés par la revérification (app grading), pour la relecture humaine.
+    review_notes = models.TextField(blank=True)
     # Prompt ayant produit le contenu (ex. « generation.v1 ») ; vide si copié depuis le cache.
     prompt_id = models.CharField(max_length=50, blank=True)
     # Empreinte de l'énoncé normalisé : déduplication et cache de génération.

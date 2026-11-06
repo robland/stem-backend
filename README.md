@@ -116,7 +116,32 @@ stem_learning_app/
 
 Règles :
 - Le serveur est **la source de vérité** ; un résultat calculé hors-ligne est recalculé à la synchronisation.
-- Après génération, chaque étape `symbolic`/`numeric`/`chem_balance` est **revérifiée** ; une étape incohérente déclenche une régénération ciblée (max 2 essais) puis passe en `generation_status = "needs_review"`.
+- Après génération, le parcours est **revérifié** par `grading.verify.verify_exercise` (expressions lisibles, erreurs typiques ≠ bonne réponse, points sur la courbe, signe de la dérivée dans le tableau de variations, conservation des atomes et des charges, coefficients minimaux, conversions d'unités). Un problème déclenche une régénération ciblée (`GENERATION_ATTEMPTS` = 2 essais au total) puis `generation_status = "needs_review"` (contenu non servi, problèmes dans `Exercise.review_notes`, relecture via l'admin).
+
+### 5.1 Règles de correction (`grading.engine.grade_step`) — à reproduire à l'identique côté client hors-ligne
+
+| Activité | Réponse envoyée (`response`) | Règle |
+|---|---|---|
+| `mcq` | `{option_ids: [id]}` | ensemble identique à `answer.option_ids` |
+| `true_false` | `{value: bool}` | égalité |
+| `short_answer` | `{text}` | `normalized_text` : texte normalisé ∈ `accepted` ; `numeric` : nombre lu, `\|v − value\| ≤ tolerance` (unité finale `unit` ignorée) |
+| `fill_blanks` | `{blanks: [{id, text}]}` | chaque trou normalisé ∈ ses `accepted` ; `details.blanks` par trou |
+| `matching` | `{pairs: [{left_id, right_id}]}` | ensemble identique ; `details.pairs` par élément de gauche |
+| `ordering` | `{order: [id]}` | ordre identique |
+| `formula_input` | `{expression}` (ASCII, cf. ci-dessous) | équivalence symbolique sur les `answer.variables` |
+| `graph_points` | `{points: [{x, y}]}` | chaque point attendu retrouvé à ± `tolerance` en x et en y, sans point en trop |
+| `graph_parameters` | `{values: [{name, value}]}` | chaque paramètre à ± `tolerance` |
+| `variation_table` | `{signs: [+\|-], arrows: [up\|down]}` | égalité ; `details.signs` / `details.arrows` |
+| `chem_balance` | `{coefficients: [int]}` | atomes **et** charges conservés, **et** plus petits entiers (sinon feedback dédié) |
+| `chem_formula` | `{formula}` | écriture normalisée identique (casse comprise : `Co` ≠ `CO`) |
+| `unit_conversion` | `{value}` (nombre ou texte) | `\|v − answer.value\| ≤ tolerance × \|answer.value\|` |
+
+- **Texte normalisé** : NFC, apostrophes typographiques → `'`, casse ignorée (`casefold`), espaces multiples réduits, ponctuation finale ` .;!?` retirée. **Les accents comptent.**
+- **Nombres** : virgule ou point décimal, espaces de milliers, `2,5×10^3`, `2.5e3`, signe `−` Unicode.
+- **Expressions** : ASCII ≤ 200 caractères ; `*` implicite (`2x`, `2(x+1)`, `xy` si x et y sont des variables) ; `^` ou `**` ; fonctions `sqrt sin cos tan exp ln log abs` ; constantes `pi`, `e` ; aucun autre identifiant ; exposants numériques ≤ 100. Équivalence par évaluation en 12 points aléatoires déterministes (tolérance relative 1e-8). Saisie filtrée par liste blanche avant SymPy (`parse_expr` repose sur `eval`).
+- **Formules chimiques** : éléments du tableau périodique, parenthèses, hydrates `·`, indices Unicode ; charge `^{2+}`, `^2+`, exposants Unicode `²⁺`, ou signe seul (`Na+`) ; électron `e-`.
+- **Feedback** : réponse fausse → `common_mistakes` correspondant (formules comparées symboliquement, nombres numériquement, sinon texte normalisé ; QCM par id ou contenu d'option), sinon feedback spécifique du moteur (ex. « Le nombre d'atomes de O n'est pas conservé »), sinon message générique.
+- Une réponse mal formée (mauvais type JSON, champ inconnu) est une erreur du client (`InvalidResponse` → HTTP 400), pas une réponse fausse.
 
 ---
 
@@ -228,7 +253,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours ; 199 tests verts.
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction ; 368 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -237,7 +262,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - ✅ Modèles `ingestion` (`Upload`, `ExtractedExercise`) et `learning` (`Exercise`, `Attempt`, `StepAnswer`, `Mastery`) avec contraintes (hash unique par élève, `client_uuid` unique, une maîtrise par chapitre, score ≤ 100) ; admin Django pour tous.
 - ✅ Upload → extraction asynchrone → correction/validation des énoncés (`/api/uploads/`, `/api/extracted-exercises/`).
 - ✅ Génération des parcours (Maths, PC) : schéma §6 validé, relance corrective, cache par énoncé, quota ; consultation sans réponses et paquet hors-ligne.
-- ❌ Correction des réponses, tentatives, progression, SSE, défis.
+- ✅ Moteurs de correction et revérification des parcours (`grading`).
+- ❌ Endpoints tentatives / réponses / indices / sync, progression, SSE, défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -264,8 +290,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
   - fichier supprimé quand tous les énoncés sont validés, en cas d'erreur, ou après `UPLOAD_FILE_RETENTION_HOURS` (`manage.py purge_upload_files` / tâche `purge_expired_upload_files`).
 - [ ] Événements de progression en SSE.
 - [x] App `learning` : génération asynchrone (`learning.tasks.generate_exercise_task`, idempotente), un parcours par énoncé (relance si erreur), cache inter-élèves par `content_hash` (énoncé normalisé + matière + niveau), quota `GENERATION_DAILY_QUOTA` (copies du cache non comptées), matières ouvertes `GENERATION_SUBJECTS` ; API `exercises` — 2026-11-06.
-- [ ] Revérification post-génération par les moteurs `grading` (SymPy, chimie) → `needs_review` (cf. §5).
-- [ ] App `grading` : `exact`, `normalized_text`, `numeric`, `symbolic` (SymPy), `chem_balance` + revérification post-génération.
+- [x] App `grading` : moteurs pour les 13 types V1 (texte normalisé, nombres FR/EN, équivalence symbolique SymPy sécurisée, chimie atomes + charges + électrons, unités), feedback par erreurs typiques, revérification post-génération intégrée à `learning` (`needs_review`, `review_notes`) — 2026-11-06.
 - [ ] Endpoints tentatives / réponses / indices / offline / sync / progress.
 - [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.
 - [x] Quota d'uploads par jour et par élève (`UPLOAD_DAILY_QUOTA`, jour calendaire `Africa/Brazzaville`, compté en base plutôt que par throttling DRF pour ne pas décompter les fichiers refusés) — 2026-11-06.

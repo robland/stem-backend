@@ -179,3 +179,51 @@ class TestPublicContent:
         assert public["steps"][0]["activity"]["options"]
         # L'original n'est pas modifié.
         assert "answer" in content["steps"][0]["activity"]
+
+
+def wrong_balance():
+    """Parcours valide pour Pydantic mais faux en chimie (oxygène non conservé)."""
+    data = step(activity="chem_balance")
+    data["activity"]["answer"]["coefficients"] = [1, 1, 1]
+    return generated_exercise(data)
+
+
+class TestVerification:
+    def test_wrong_answer_triggers_targeted_regeneration(self, generate, user, fake_llm):
+        generate(make_extracted(user), wrong_balance(), generated_exercise())
+
+        exercise = Exercise.objects.get()
+        assert exercise.generation_status == Exercise.GenerationStatus.READY
+        assert exercise.review_notes == ""
+        assert len(fake_llm.calls) == 2
+        retry = fake_llm.calls[1]["prompt"].user
+        assert "Ta réponse précédente était invalide" in retry
+        assert "atomes de O" in retry
+
+    def test_still_wrong_goes_to_review(self, generate, auth_client, user, fake_llm):
+        generate(make_extracted(user), wrong_balance(), wrong_balance())
+
+        exercise = Exercise.objects.get()
+        assert exercise.generation_status == Exercise.GenerationStatus.NEEDS_REVIEW
+        assert "atomes de O" in exercise.review_notes
+        assert len(fake_llm.calls) == 2
+        detail = auth_client.get(f"/api/exercises/{exercise.id}/").data
+        assert detail["content"] is None
+        assert "vérifié" in detail["error_message"]
+        assert "review_notes" not in detail
+
+    def test_exercise_to_review_is_not_used_as_cache(self, generate, user, other_user, other_client, fake_llm):
+        generate(make_extracted(user), wrong_balance(), wrong_balance())
+
+        response = generate(make_extracted(other_user), generated_exercise(), client=other_client)
+
+        assert response.status_code == 202
+        assert len(fake_llm.calls) == 3
+
+    def test_attempts_are_configurable(self, generate, user, fake_llm, settings):
+        settings.GENERATION_ATTEMPTS = 1
+
+        generate(make_extracted(user), wrong_balance())
+
+        assert Exercise.objects.get().generation_status == Exercise.GenerationStatus.NEEDS_REVIEW
+        assert len(fake_llm.calls) == 1

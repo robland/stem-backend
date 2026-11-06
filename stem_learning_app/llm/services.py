@@ -30,11 +30,12 @@ def exam_for(level):
     return "BEPC" if level in COLLEGE_LEVELS else "BAC"
 
 
-def generate_exercise(*, statement, subject, level, chapter=""):
+def generate_exercise(*, statement, subject, level, chapter="", corrections=()):
     """Énoncé validé → parcours guidé. Renvoie un LLMResult[GeneratedExercise].
 
     Une réponse hors schéma (ex. bonne réponse absente des options) est relancée
-    une fois en indiquant au modèle les erreurs à corriger.
+    une fois en indiquant au modèle les erreurs à corriger. `corrections` transmet
+    les erreurs détectées sur une génération précédente (revérification).
     """
     context = {
         "subject": SubjectCode(subject).label,
@@ -46,14 +47,17 @@ def generate_exercise(*, statement, subject, level, chapter=""):
     }
     prompt = latest_prompt("generation")
     try:
-        return _generate(prompt.render(**context, correction=""))
+        return _generate(prompt.render(**context, correction=_correction_text(corrections)))
     except LLMOutputInvalid as e:
         if not e.errors:
             raise
-        correction = "\nTa réponse précédente était invalide. Corrige ces erreurs :\n" + "\n".join(
-            f"- {line}" for line in e.errors
-        )
-        return _generate(prompt.render(**context, correction=correction))
+        return _generate(prompt.render(**context, correction=_correction_text(e.errors)))
+
+
+def _correction_text(errors):
+    if not errors:
+        return ""
+    return "\nTa réponse précédente était invalide. Corrige ces erreurs :\n" + "\n".join(f"- {line}" for line in errors)
 
 
 def _generate(rendered):
