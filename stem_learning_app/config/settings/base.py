@@ -39,6 +39,15 @@ ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# LLM : fournisseur interchangeable (app llm), modèle choisi par tâche.
+LLM_CLIENT = os.environ.get("LLM_CLIENT", "llm.clients.openai.OpenAIClient")
+LLM_MODELS = {
+    "extraction": os.environ.get("LLM_MODEL_EXTRACTION", "gpt-4.1-mini"),
+    "generation": os.environ.get("LLM_MODEL_GENERATION", "gpt-4.1-mini"),
+}
+LLM_TIMEOUT_SECONDS = int(os.environ.get("LLM_TIMEOUT_SECONDS", "90"))
+LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "2"))
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
 CORS_ALLOW_CREDENTIALS = True
@@ -52,6 +61,7 @@ INSTALLED_APPS = [
     'curriculum',
     'ingestion',
     'learning',
+    'llm',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',

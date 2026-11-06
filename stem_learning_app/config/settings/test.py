@@ -7,6 +7,8 @@ DEBUG = False
 SECRET_KEY = "test-secret-key-not-used-anywhere-else-0123456789"
 ALLOWED_HOSTS = ["testserver"]
 OPENAI_API_KEY = "test-openai-key"
+# Jamais d'appel réel au LLM dans les tests (fixture fake_llm).
+LLM_CLIENT = "llm.clients.fake.FakeLLMClient"
 
 # DATABASE_URL est volontairement ignoré : les tests ne doivent jamais toucher
 # une base réelle. TEST_DATABASE_URL (Postgres dans Docker) ou SQLite en mémoire.

@@ -58,7 +58,7 @@ Django 5.2 + DRF  ──►  PostgreSQL
 ```
 
 ### Stack
-- **Python 3.11**, Django 5.2, DRF, SimpleJWT, drf-spectacular (OpenAPI), django-cors-headers.
+- **Python 3.12**, Django 5.2, DRF, SimpleJWT, drf-spectacular (OpenAPI), django-cors-headers.
 - **Celery + Redis** (remplace RabbitMQ : plus simple à héberger).
 - **PostgreSQL** (SQLite toléré en dev uniquement).
 - **Pydantic v2** pour valider le contenu généré par le LLM (schéma §6).
@@ -244,7 +244,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [x] Modèle `User` cible (`AbstractBaseUser` : téléphone, pseudo, niveau, série ; aucun nom/prénom/e-mail) + `/api/me/` — 2026-11-06.
 - [x] App `curriculum` : `Subject` (codes figés, seed par migration), `Chapter` unique par (matière, niveau, nom), API en lecture seule — 2026-11-06.
 - [ ] **Chapitres du programme congolais** (Maths, PC ; 6e→Tle) : à saisir à partir des programmes officiels fournis par le porteur du projet (ne pas inventer), puis data migration ou fixture.
-- [ ] App `llm` : client abstrait, prompts versionnés, **structured outputs** (JSON Schema dérivé des modèles Pydantic).
+- [x] App `llm` : client abstrait `LLMClient` (`OpenAIClient` via `chat.completions.parse`, `FakeLLMClient` pour les tests), modèle par tâche (`LLM_MODELS`), prompts versionnés immuables (`extraction.v1`), schémas Pydantic compatibles structured outputs stricts, type `RichText` (HTML refusé), service `extract_exercises(images, declared_level)` — 2026-11-06.
+- [ ] Prompt + schéma de **génération** du parcours (§6) dans `llm/` (réutiliser `RichText`).
 - [x] Modèles `ingestion` et `learning` (§4) — 2026-11-06.
 - [ ] App `ingestion` : upload (validation type/taille, hash par utilisateur, quota/jour), extraction vision, édition de l'énoncé, suppression du fichier après validation, support PDF (conversion pages → images).
 - [ ] Événements de progression en SSE.
@@ -317,7 +318,11 @@ Les tests utilisent toujours `config.settings.test` (forcé par `--ds` dans `pyp
 2. **Langue** : identifiants de code en anglais ; textes visibles par l'élève, prompts et documentation en français.
 3. **Données personnelles** : n'ajoutez **jamais** de champ personnel au-delà du téléphone. Ne loggez ni numéros de téléphone, ni contenus d'uploads.
 4. **Réponses attendues** : ne jamais les exposer hors de l'endpoint `offline` réservé au propriétaire.
-5. **LLM** : uniquement via l'app `llm` ; toujours en structured outputs ; toujours valider par Pydantic ; **jamais d'appel réel au LLM dans les tests** (mocks/fixtures de réponses).
+5. **LLM** : uniquement via l'app `llm` ; toujours en structured outputs ; toujours valider par Pydantic ; **jamais d'appel réel au LLM dans les tests** : les settings de test imposent `FakeLLMClient`, piloté par la fixture `fake_llm` (`fake_llm.queue({...})`, `fake_llm.calls`).
+   - Les autres apps n'appellent que `llm/services.py` (jamais le SDK directement).
+   - Un prompt publié ne se modifie pas : créer `Prompt(name, version+1)` et l'enregistrer dans `llm/prompts/__init__.py` ; conserver le `prompt_id` avec le contenu produit.
+   - Schémas de sortie : pas de valeurs par défaut, `extra="forbid"`, contraintes de longueur/nombre via validateurs Pydantic (refusées par le mode strict) ; `llm/tests/test_schemas.py` vérifie la compatibilité.
+   - Ne jamais logger le contenu des prompts ni des réponses : uniquement les métriques (tâche, prompt, modèle, tokens, durée).
 6. **Tests obligatoires** pour toute fonctionnalité : auth/permissions, validation de schéma, chaque moteur de correction, synchro idempotente. Tests dans `<app>/tests/test_*.py`, fixtures communes dans `stem_learning_app/conftest.py`. `docker compose run --rm web pytest` doit être vert avant de considérer une tâche terminée.
 7. **Dépendances** : uniquement via `uv add` / `uv remove` (jamais `pip install` dans le projet) ; committer `uv.lock`.
 8. **Contrat §6** : toute évolution ⇒ bump `schema_version` + mise à jour des deux README.

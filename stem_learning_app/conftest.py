@@ -3,6 +3,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import User
+from llm.clients import get_client
 
 PASSWORD = "Mot-de-passe-solide-42"
 
@@ -41,3 +42,12 @@ def auth_client(user):
 @pytest.fixture
 def admin_client(admin_user):
     return _client_for(admin_user)
+
+
+@pytest.fixture
+def fake_llm():
+    """FakeLLMClient partagé (settings de test) : file de réponses vidée à chaque test."""
+    client = get_client()
+    client.reset()
+    yield client
+    client.reset()
