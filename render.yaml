@@ -40,6 +40,18 @@ services:
   #   envVars:
   #     - fromGroup: ...
 
+  # Tâches périodiques sans processus beat : relance des traitements bloqués et purge
+  # des fichiers expirés. Les cron jobs Render sont payants (facturés à l'exécution).
+  # - type: cron
+  #   name: stem-maintenance
+  #   runtime: docker
+  #   schedule: "*/10 * * * *"
+  #   dockerfilePath: ./Dockerfile
+  #   dockerContext: .
+  #   dockerCommand: python manage.py run_maintenance
+  #   envVars:
+  #     - fromGroup: ...
+
   - type: keyvalue
     name: stem-redis
     plan: free

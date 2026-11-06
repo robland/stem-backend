@@ -18,6 +18,7 @@ ERROR_NO_EXERCISE = "Aucun exercice détecté. Vérifie que la photo est nette e
 ERROR_REFUSED = "Ce document ne peut pas être analysé."
 ERROR_LLM = "L'analyse a échoué. Réessaie dans quelques minutes en renvoyant le document."
 ERROR_FILE_MISSING = "Le document n'est plus disponible : renvoie-le."
+ERROR_INTERRUPTED = "L'analyse a été interrompue. Renvoie le document pour réessayer."
 
 
 # --- Quota -------------------------------------------------------------------
@@ -129,3 +130,35 @@ def purge_expired_files():
         delete_file(upload)
         count += 1
     return count
+
+
+# --- Traitements bloqués --------------------------------------------------------------
+
+def stuck_before():
+    return timezone.now() - timedelta(minutes=settings.JOB_STUCK_AFTER_MINUTES)
+
+
+def recover_stuck_uploads():
+    """Relance les extractions jamais démarrées ; met en erreur celles interrompues en cours de lecture.
+
+    Une lecture interrompue n'est pas relancée automatiquement : un document qui fait
+    planter le worker le ferait en boucle. L'élève peut renvoyer le document.
+    Renvoie (relancées, en erreur).
+    """
+    from .tasks import extract_upload
+
+    limit = stuck_before()
+    pending = list(
+        Upload.objects.filter(status=Upload.Status.PENDING, updated_at__lt=limit).values_list("id", flat=True)
+    )
+    Upload.objects.filter(id__in=pending).update(updated_at=timezone.now())
+    for upload_id in pending:
+        extract_upload.delay(str(upload_id))
+
+    interrupted = Upload.objects.filter(status=Upload.Status.READING, updated_at__lt=limit)
+    failed = 0
+    for upload in interrupted:
+        logger.warning("Extraction interrompue pour l'upload %s", upload.id)
+        _fail(upload, ERROR_INTERRUPTED)
+        failed += 1
+    return len(pending), failed

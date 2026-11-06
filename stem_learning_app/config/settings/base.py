@@ -10,6 +10,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 # stem_learning_app/
@@ -55,6 +56,9 @@ UPLOAD_MAX_PDF_PAGES = int(os.environ.get("UPLOAD_MAX_PDF_PAGES", "4"))
 UPLOAD_DAILY_QUOTA = int(os.environ.get("UPLOAD_DAILY_QUOTA", "10"))
 # Au-delà, le fichier est supprimé même si l'élève n'a pas validé ses énoncés.
 UPLOAD_FILE_RETENTION_HOURS = int(os.environ.get("UPLOAD_FILE_RETENTION_HOURS", "48"))
+# Au-delà, un traitement asynchrone (extraction, génération) est considéré comme bloqué
+# (worker arrêté, message perdu). Doit rester supérieur à CELERY_TASK_TIME_LIMIT.
+JOB_STUCK_AFTER_MINUTES = int(os.environ.get("JOB_STUCK_AFTER_MINUTES", "15"))
 
 # Génération des parcours (app learning)
 # Matières ouvertes à la génération (V1 : Maths et Physique-Chimie).
@@ -201,6 +205,11 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Africa/Brazzaville"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 60 * 10  # 10 minutes max par tâche
+# Tâches périodiques (processus `celery beat`, ou `manage.py run_maintenance` en cron).
+CELERY_BEAT_SCHEDULE = {
+    "recover-stuck-jobs": {"task": "ingestion.tasks.run_maintenance", "schedule": crontab(minute="*/5")},
+    "purge-upload-files": {"task": "ingestion.tasks.purge_expired_upload_files", "schedule": crontab(minute=0)},
+}
 
 
 # Internationalization

@@ -9,7 +9,7 @@ from django.utils import timezone
 from pydantic import ValidationError
 
 from grading.verify import verify_exercise
-from ingestion.services import seconds_until_quota_reset, start_of_today
+from ingestion.services import seconds_until_quota_reset, start_of_today, stuck_before
 from llm.exceptions import LLMError, LLMRefusal
 from llm.schemas import SCHEMA_VERSION, ExerciseContent
 from llm.services import generate_exercise
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 ERROR_REFUSED = "Cet énoncé ne peut pas être transformé en parcours."
 ERROR_LLM = "La préparation du parcours a échoué. Réessaie dans quelques minutes."
 ERROR_NEEDS_REVIEW = "Ce parcours doit être vérifié avant de t'être proposé."
+ERROR_INTERRUPTED = "La préparation du parcours a été interrompue. Relance-la."
 
 
 class GenerationRefused(Exception):
@@ -179,3 +180,26 @@ def public_content(content):
         step.pop("explanation", None)
         step["hints"] = step["hints"][:-1]
     return content
+
+
+def recover_stuck_generations():
+    """Relance les générations jamais démarrées ; met en erreur celles interrompues (relance possible par l'élève,
+    sans quota supplémentaire). Renvoie (relancées, en erreur)."""
+    from .tasks import generate_exercise_task
+
+    limit = stuck_before()
+    pending = list(
+        Exercise.objects.filter(generation_status=Exercise.GenerationStatus.PENDING, updated_at__lt=limit)
+        .values_list("id", flat=True)
+    )
+    Exercise.objects.filter(id__in=pending).update(updated_at=timezone.now())
+    for exercise_id in pending:
+        generate_exercise_task.delay(str(exercise_id))
+
+    interrupted = Exercise.objects.filter(generation_status=Exercise.GenerationStatus.GENERATING, updated_at__lt=limit)
+    failed = 0
+    for exercise in interrupted:
+        logger.warning("Génération interrompue pour le parcours %s", exercise.id)
+        _fail(exercise, ERROR_INTERRUPTED)
+        failed += 1
+    return len(pending), failed

@@ -271,7 +271,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction, tentatives et synchro hors-ligne, progression ; 426 tests verts.
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction, tentatives et synchro hors-ligne, progression, tâches périodiques ; 438 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -314,7 +314,10 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [x] Endpoints tentatives / réponses / indices / sync (`learning.attempts`, §5.2) — 2026-11-06.
 - [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.
 - [x] Quota d'uploads par jour et par élève (`UPLOAD_DAILY_QUOTA`, jour calendaire `Africa/Brazzaville`, compté en base plutôt que par throttling DRF pour ne pas décompter les fichiers refusés) — 2026-11-06.
-- [ ] Planifier la purge des fichiers (Celery beat ou cron de l'hébergeur) et la remise en `error` des uploads bloqués en `reading` (worker arrêté).
+- [x] Tâches périodiques — 2026-11-06 :
+  - `CELERY_BEAT_SCHEDULE` : `ingestion.tasks.run_maintenance` toutes les 5 min, purge des fichiers expirés toutes les heures ; service `beat` dans Compose (un seul processus beat).
+  - traitement bloqué = sans nouvelle depuis `JOB_STUCK_AFTER_MINUTES` (15, > `CELERY_TASK_TIME_LIMIT`) : `pending` → relancé (tâches idempotentes) ; `reading` / `generating` → `error` avec message (pas de relance automatique : un document qui fait planter le worker bouclerait). L'élève renvoie le document ou relance la génération (sans quota supplémentaire).
+  - sans beat (cron d'hébergeur) : `python manage.py run_maintenance` (bloc `cron` commenté dans `render.yaml`).
 - [x] `Mastery` + révision espacée + « révision du jour » + endpoint `progress` (§5.3) — 2026-11-06.
 - [x] Reset des migrations (décision du porteur du projet : aucune donnée à conserver) ; `cot_for_stem` supprimée — 2026-11-06.
 
@@ -330,7 +333,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [ ] Login mobile : renvoyer le refresh token dans le body (le refresh/logout l'acceptent déjà).
 
 ### Déploiement (à décider)
-- [ ] Render : le web est en plan gratuit, mais **le worker Celery exige un plan payant** (bloc commenté dans `render.yaml`). Sans worker, l'analyse des exercices ne tourne pas en production. Alternatives à étudier : autre hébergeur, worker auto-hébergé.
+- [ ] Render : le web est en plan gratuit, mais **le worker Celery exige un plan payant** (bloc commenté dans `render.yaml`), de même que les tâches périodiques (worker lancé avec `-B`, ou cron job `run_maintenance`). Sans worker, l'analyse des exercices ne tourne pas en production. Alternatives à étudier : autre hébergeur, worker auto-hébergé.
 - [ ] Stockage des uploads en prod (disque Render éphémère) : stockage objet S3-compatible (Supabase Storage).
 
 ---
@@ -346,7 +349,8 @@ docker compose run --rm web pytest         # tests sur PostgreSQL
 docker compose run --rm web python manage.py createsuperuser
 ```
 
-Le code est monté en volume : le serveur de dev recharge à chaud ; **redémarrer `worker`** après modification d'une tâche Celery (`docker compose restart worker`).
+Services : `web` (API), `worker` (extraction, génération), `beat` (tâches périodiques), `db`, `redis`.
+Le code est monté en volume : le serveur de dev recharge à chaud ; **redémarrer `worker` et `beat`** après modification d'une tâche Celery ou de `CELERY_BEAT_SCHEDULE` (`docker compose restart worker beat`).
 Après un changement de dépendances : `uv add <paquet>` (ou `uv lock`) puis `docker compose build`.
 
 ### Sans Docker
@@ -359,6 +363,7 @@ cd stem_learning_app
 uv run python manage.py migrate
 uv run python manage.py runserver
 uv run celery -A config worker -l info     # nécessite Redis sur localhost:6379
+uv run celery -A config beat -l info       # tâches périodiques (ou : manage.py run_maintenance)
 ```
 
 ### Image de production

@@ -34,6 +34,11 @@ services:
     <<: *backend
     command: celery -A config worker -l info
 
+  # Tâches périodiques (CELERY_BEAT_SCHEDULE). Un seul processus beat à la fois.
+  beat:
+    <<: *backend
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+
   db:
     image: postgres:16-alpine
     environment:
