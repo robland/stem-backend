@@ -601,6 +601,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Me'
           description: ''
+  /api/progress/:
+    get:
+      operationId: progress_retrieve
+      summary: Ma progression et ma révision du jour
+      tags:
+      - progress
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progress'
+          description: ''
   /api/sync/:
     post:
       operationId: sync_create
@@ -1097,6 +1112,28 @@ components:
         * `2nde` - 2nde
         * `1re` - 1re
         * `Tle` - Terminale
+    Mastery:
+      type: object
+      properties:
+        chapter:
+          $ref: '#/components/schemas/Chapter'
+        score:
+          type: integer
+          maximum: 100
+          minimum: 0
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        next_review_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chapter
+      - updated_at
     Me:
       type: object
       properties:
@@ -1200,6 +1237,37 @@ components:
           type: string
           format: date-time
           readOnly: true
+    Progress:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/Summary'
+        subjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubjectProgress'
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mastery'
+        review_today:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewItem'
+          description: '« Révision du jour » : 10 parcours au plus.'
+      required:
+      - chapters
+      - review_today
+      - subjects
+      - summary
+    ReasonEnum:
+      enum:
+      - to_finish
+      - to_review
+      type: string
+      description: |-
+        * `to_finish` - to_finish
+        * `to_review` - to_review
     Register:
       type: object
       description: 'Seule donnée personnelle collectée : le téléphone. `pseudo` est
@@ -1224,6 +1292,46 @@ components:
       - password
       - phone
       - pseudo
+    ReviewItem:
+      type: object
+      properties:
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          description: |-
+            to_finish : tentative commencée ; to_review : révision échue.
+
+            * `to_finish` - to_finish
+            * `to_review` - to_review
+        exercise:
+          $ref: '#/components/schemas/Exercise'
+        attempt:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tentative à reprendre (to_finish).
+        due_at:
+          type: string
+          format: date-time
+        last_score:
+          type: integer
+          nullable: true
+      required:
+      - attempt
+      - due_at
+      - exercise
+      - last_score
+      - reason
+    StateEnum:
+      enum:
+      - non_acquis
+      - en_cours
+      - maitrise
+      type: string
+      description: |-
+        * `non_acquis` - Non acquis
+        * `en_cours` - En cours
+        * `maitrise` - Maîtrisé
     StepState:
       type: object
       properties:
@@ -1281,6 +1389,38 @@ components:
         * `francais` - Français
         * `anglais` - Anglais
         * `histoire_geo` - Histoire-Géographie
+    SubjectProgress:
+      type: object
+      properties:
+        subject:
+          type: string
+        exercises_done:
+          type: integer
+        average_score:
+          type: integer
+      required:
+      - average_score
+      - exercises_done
+      - subject
+    Summary:
+      type: object
+      properties:
+        exercises_done:
+          type: integer
+          description: Parcours terminés au moins une fois.
+        attempts_finished:
+          type: integer
+        average_score:
+          type: integer
+          nullable: true
+        streak_days:
+          type: integer
+          description: Jours consécutifs d'activité, jusqu'à aujourd'hui ou hier.
+      required:
+      - attempts_finished
+      - average_score
+      - exercises_done
+      - streak_days
     SyncAnswer:
       type: object
       properties:

@@ -152,6 +152,14 @@ Règles :
 - **Score d'une étape** (sur 100) : réussie → `max(0, 100 − 20 × indices − 20 × réponses fausses)` ; échouée → 0. **Score de la tentative** = moyenne des étapes (arrondie) ; `finished_at` quand toutes les étapes sont closes.
 - **Hors-ligne** : le client génère l'`id` de la tentative et le `client_uuid` de chaque réponse ; `POST sync` rejoue les réponses par `answered_at` (horodatages futurs ramenés à maintenant), **recorrige tout côté serveur** et ignore tout verdict envoyé par le client. Un renvoi ne crée aucun doublon (`duplicate`) ; une réponse refusée (`rejected` + `reason`) ne bloque pas les suivantes. Limites : 50 tentatives et 100 réponses par tentative par appel.
 
+
+### 5.3 Progression et révision espacée (`learning.progress`)
+
+- **Révision par parcours** (fonctionne sans chapitre) : à partir des scores successifs des tentatives finies, intervalle type Leitner — score ≥ 80 : intervalle doublé (1 jour la première fois, 60 jours max) ; 50–79 : intervalle conservé ; < 50 : 1 jour. Échéance = fin de la dernière tentative + intervalle.
+- **Révision du jour** (10 au plus) : d'abord les tentatives commencées non finies (`to_finish`, sauf si une tentative finie plus récente existe), puis les parcours dont l'échéance tombe aujourd'hui ou avant (`to_review`). Seuls les parcours `ready`.
+- **Maîtrise par chapitre** (`Mastery`, mise à jour à la fin de chaque tentative, en ligne ou par synchro) : première tentative = son score, puis moyenne mobile `0,6 × ancien + 0,4 × nouveau` ; état `maitrise` ≥ 80, `en_cours` ≥ 40, sinon `non_acquis` ; `next_review_at` = plus proche échéance des parcours du chapitre.
+- **Série** (`streak_days`) : jours consécutifs (fuseau `Africa/Brazzaville`) avec au moins une réponse, jusqu'à aujourd'hui ou hier.
+
 ---
 
 ## 6. Contrat de contenu : le schéma d'activités
@@ -254,7 +262,7 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | POST | `attempts/{id}/answers` | `{step_id, response, client_uuid, answered_at?, hints_used?}` → `{is_correct, feedback, details, step, explanation, attempt}` ; `201`, ou `200` si `client_uuid` déjà reçu |
 | POST | `attempts/{id}/hints` | `{step_id}` → `{hint, level, total}` (étape en cours uniquement) |
 | POST | `sync` | `{attempts: [{id, exercise, started_at, answers: [...]}]}` → statut par tentative et par réponse (cf. §5.2) |
-| GET | `progress` | maîtrise par chapitre, révision du jour |
+| GET | `progress` | `summary` (parcours faits, tentatives, score moyen, série de jours), `subjects`, `chapters` (maîtrise), `review_today` (cf. §5.3) |
 
 Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère son client TypeScript à partir de lui. Toute route doit avoir serializers et annotations drf-spectacular corrects.
 
@@ -263,7 +271,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction, tentatives et synchro hors-ligne ; 398 tests verts.
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction, tentatives et synchro hors-ligne, progression ; 426 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -274,7 +282,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - ✅ Génération des parcours (Maths, PC) : schéma §6 validé, relance corrective, cache par énoncé, quota ; consultation sans réponses et paquet hors-ligne.
 - ✅ Moteurs de correction et revérification des parcours (`grading`).
 - ✅ Tentatives : démarrage, réponses corrigées avec feedback, indices, score, synchronisation hors-ligne idempotente.
-- ❌ Progression (`Mastery`, révision du jour), SSE, défis.
+- ✅ Progression : maîtrise par chapitre, révision espacée par parcours, révision du jour, série de jours (`/api/progress/`).
+- ❌ SSE, défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -303,11 +312,10 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [x] App `learning` : génération asynchrone (`learning.tasks.generate_exercise_task`, idempotente), un parcours par énoncé (relance si erreur), cache inter-élèves par `content_hash` (énoncé normalisé + matière + niveau), quota `GENERATION_DAILY_QUOTA` (copies du cache non comptées), matières ouvertes `GENERATION_SUBJECTS` ; API `exercises` — 2026-11-06.
 - [x] App `grading` : moteurs pour les 13 types V1 (texte normalisé, nombres FR/EN, équivalence symbolique SymPy sécurisée, chimie atomes + charges + électrons, unités), feedback par erreurs typiques, revérification post-génération intégrée à `learning` (`needs_review`, `review_notes`) — 2026-11-06.
 - [x] Endpoints tentatives / réponses / indices / sync (`learning.attempts`, §5.2) — 2026-11-06.
-- [ ] Endpoint `progress`.
 - [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.
 - [x] Quota d'uploads par jour et par élève (`UPLOAD_DAILY_QUOTA`, jour calendaire `Africa/Brazzaville`, compté en base plutôt que par throttling DRF pour ne pas décompter les fichiers refusés) — 2026-11-06.
 - [ ] Planifier la purge des fichiers (Celery beat ou cron de l'hébergeur) et la remise en `error` des uploads bloqués en `reading` (worker arrêté).
-- [ ] `Mastery` + calcul « révision du jour ».
+- [x] `Mastery` + révision espacée + « révision du jour » + endpoint `progress` (§5.3) — 2026-11-06.
 - [x] Reset des migrations (décision du porteur du projet : aucune donnée à conserver) ; `cot_for_stem` supprimée — 2026-11-06.
 
 ### Phase 2 — V2

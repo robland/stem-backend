@@ -16,6 +16,8 @@ from .attempt_serializers import (
     SyncResultSerializer,
 )
 from .models import Attempt
+from .progress import progress_summary
+from .progress_serializers import ProgressSerializer
 
 
 def _refused(error):
@@ -93,3 +95,9 @@ class SyncView(APIView):
         serializer.is_valid(raise_exception=True)
         results = service.sync_attempts(request.user, serializer.validated_data["attempts"])
         return Response(SyncResultSerializer({"attempts": results}).data)
+
+
+class ProgressView(APIView):
+    @extend_schema(responses={200: ProgressSerializer}, summary="Ma progression et ma révision du jour")
+    def get(self, request):
+        return Response(ProgressSerializer(progress_summary(request.user)).data)

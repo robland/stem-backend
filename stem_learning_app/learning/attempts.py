@@ -109,9 +109,14 @@ def current_step_id(states):
 def _refresh_totals(attempt, states):
     attempt.score = round(sum(state.score for state in states) / len(states)) if states else 0
     attempt.hints_used = sum(state.hints_used for state in states)
-    if all(state.closed for state in states) and not attempt.finished_at:
+    just_finished = all(state.closed for state in states) and not attempt.finished_at
+    if just_finished:
         attempt.finished_at = timezone.now()
     attempt.save(update_fields=["score", "hints_used", "finished_at", "hints"])
+    if just_finished:
+        from .progress import on_attempt_finished
+
+        on_attempt_finished(attempt)
 
 
 # --- Réponses --------------------------------------------------------------------
