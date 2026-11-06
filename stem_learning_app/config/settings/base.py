@@ -48,6 +48,14 @@ LLM_MODELS = {
 LLM_TIMEOUT_SECONDS = int(os.environ.get("LLM_TIMEOUT_SECONDS", "90"))
 LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "2"))
 
+# Uploads d'exercices (app ingestion)
+UPLOAD_MAX_BYTES = int(os.environ.get("UPLOAD_MAX_BYTES", 10 * 1024 * 1024))
+UPLOAD_MAX_PDF_PAGES = int(os.environ.get("UPLOAD_MAX_PDF_PAGES", "4"))
+# Nouveaux documents par élève et par jour (fuseau TIME_ZONE) : chaque document coûte un appel LLM.
+UPLOAD_DAILY_QUOTA = int(os.environ.get("UPLOAD_DAILY_QUOTA", "10"))
+# Au-delà, le fichier est supprimé même si l'élève n'a pas validé ses énoncés.
+UPLOAD_FILE_RETENTION_HOURS = int(os.environ.get("UPLOAD_FILE_RETENTION_HOURS", "48"))
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
 CORS_ALLOW_CREDENTIALS = True

@@ -6,7 +6,7 @@ from .models import Upload, ExtractedExercise
 class ExtractedExerciseInline(admin.TabularInline):
     model = ExtractedExercise
     extra = 0
-    fields = ["order", "subject", "chapter", "level", "validated_at"]
+    fields = ["order", "subject", "chapter", "chapter_hint", "level", "validated_at"]
 
 
 @admin.register(Upload)

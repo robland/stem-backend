@@ -233,6 +233,85 @@ paths:
               schema:
                 $ref: '#/components/schemas/Subject'
           description: ''
+  /api/extracted-exercises/{id}/:
+    patch:
+      operationId: extracted_exercises_partial_update
+      summary: Corriger un énoncé extrait (matière, niveau, chapitre)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedExtractedExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedExtractedExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedExtractedExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedExercise'
+          description: ''
+    delete:
+      operationId: extracted_exercises_destroy
+      summary: Écarter un énoncé extrait non validé
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/extracted-exercises/{id}/validate/:
+    post:
+      operationId: extracted_exercises_validate_create
+      description: Le document d'origine est supprimé dès que tous ses énoncés sont
+        validés.
+      summary: Valider un énoncé extrait
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedExercise'
+          description: ''
+        '400':
+          description: Matière ou niveau manquant.
   /api/me/:
     get:
       operationId: me_retrieve
@@ -273,6 +352,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/Me'
           description: ''
+  /api/uploads/:
+    post:
+      operationId: uploads_create
+      description: 'L''extraction est asynchrone : suivre `status` via `GET /api/uploads/{id}/`.'
+      summary: Envoyer un document d'exercices
+      tags:
+      - uploads
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: 'Document déjà envoyé : upload existant.'
+        '400':
+          description: Fichier refusé (type, taille, pages).
+        '429':
+          description: Quota journalier atteint (en-tête Retry-After).
+  /api/uploads/{id}/:
+    get:
+      operationId: uploads_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) upload.
+        required: true
+      tags:
+      - uploads
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: ''
 components:
   schemas:
     BlankEnum:
@@ -304,6 +437,52 @@ components:
       - level
       - name
       - subject
+    ExtractedExercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        order:
+          type: integer
+          readOnly: true
+        statement:
+          type: string
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          nullable: true
+        chapter:
+          type: string
+          format: uuid
+          nullable: true
+        chapter_hint:
+          type: string
+          readOnly: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        validated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - chapter_hint
+      - id
+      - order
+      - statement
+      - validated_at
+    FileTypeEnum:
+      enum:
+      - image
+      - pdf
+      type: string
+      description: |-
+        * `image` - Image
+        * `pdf` - PDF
     LevelEnum:
       enum:
       - 6e
@@ -346,6 +525,38 @@ components:
       - date_joined
       - phone
       - pseudo
+    PatchedExtractedExercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        order:
+          type: integer
+          readOnly: true
+        statement:
+          type: string
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          nullable: true
+        chapter:
+          type: string
+          format: uuid
+          nullable: true
+        chapter_hint:
+          type: string
+          readOnly: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        validated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
     PatchedMe:
       type: object
       properties:
@@ -390,6 +601,18 @@ components:
       - password
       - phone
       - pseudo
+    StatusEnum:
+      enum:
+      - pending
+      - reading
+      - extracted
+      - error
+      type: string
+      description: |-
+        * `pending` - En attente
+        * `reading` - Lecture en cours
+        * `extracted` - Énoncés extraits
+        * `error` - Erreur
     Subject:
       type: object
       properties:
@@ -448,6 +671,49 @@ components:
       required:
       - access
       - refresh
+    Upload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        file_type:
+          allOf:
+          - $ref: '#/components/schemas/FileTypeEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractedExercise'
+          readOnly: true
+      required:
+      - created_at
+      - error_message
+      - exercises
+      - file_type
+      - id
+      - status
+    UploadCreate:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+          description: Photo (JPEG, PNG, WebP) ou PDF.
+      required:
+      - file
   securitySchemes:
     jwtAuth:
       type: http

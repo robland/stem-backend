@@ -201,10 +201,11 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | POST | `auth/login` / `auth/refresh` / `auth/logout` | |
 | GET/PATCH | `me` | niveau, série, pseudo |
 | GET | `curriculum/subjects`, `curriculum/chapters?subject=&level=` | référentiel |
-| POST | `uploads` | multipart (image/PDF), quota journalier → `{upload_id}` |
-| GET | `uploads/{id}` | statut + exercices extraits |
+| POST | `uploads` | multipart `file` (JPEG/PNG/WebP/PDF ≤ 4 pages, ≤ 10 Mo) → `201` upload ; `200` si le même document a déjà été envoyé (idempotent, hors quota) ; `429` + `Retry-After` si quota journalier atteint |
+| GET | `uploads/{id}` | `status` (`pending` → `reading` → `extracted` \| `error`), `error_message` (destiné à l'élève), exercices extraits. Aucune URL de fichier exposée |
 | GET | `uploads/{id}/events` | **SSE** : progression (`reading`, `extracted`, `generating`, `step_ready`, `done`, `error`) |
-| PATCH | `extracted-exercises/{id}` | correction énoncé / matière / chapitre |
+| PATCH / DELETE | `extracted-exercises/{id}` | correction (`statement`, `subject`, `level`, `chapter`) / écarter un énoncé — refusé (`400`) une fois validé |
+| POST | `extracted-exercises/{id}/validate` | fige l'énoncé (matière et niveau requis) ; fichier d'origine supprimé quand tous les énoncés sont validés |
 | POST | `extracted-exercises/{id}/generate` | lance la génération → `{exercise_id}` |
 | GET | `exercises` / `exercises/{id}` / `exercises/{id}/offline` | cf. §6.4 |
 | POST | `exercises/{id}/attempts` | démarre une tentative |
@@ -220,14 +221,15 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données cible et migrations propres en place, 39 tests verts.
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation) ; 125 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
 - ✅ `GET/PATCH /api/me/` (pseudo, niveau, série ; téléphone non modifiable).
 - ✅ Référentiel `GET /api/curriculum/subjects/` et `/api/curriculum/chapters/?subject=&level=` (lecture seule) ; 6 matières créées par migration.
 - ✅ Modèles `ingestion` (`Upload`, `ExtractedExercise`) et `learning` (`Exercise`, `Attempt`, `StepAnswer`, `Mastery`) avec contraintes (hash unique par élève, `client_uuid` unique, une maîtrise par chapitre, score ≤ 100) ; admin Django pour tous.
-- ❌ Aucun endpoint d'upload, d'extraction ni de génération pour l'instant (l'ancien pipeline a été retiré) ; correction, progression, hors-ligne, défis.
+- ✅ Upload → extraction asynchrone → correction/validation des énoncés (`/api/uploads/`, `/api/extracted-exercises/`).
+- ❌ Génération des parcours, correction, progression, hors-ligne, SSE, défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -247,13 +249,18 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [x] App `llm` : client abstrait `LLMClient` (`OpenAIClient` via `chat.completions.parse`, `FakeLLMClient` pour les tests), modèle par tâche (`LLM_MODELS`), prompts versionnés immuables (`extraction.v1`), schémas Pydantic compatibles structured outputs stricts, type `RichText` (HTML refusé), service `extract_exercises(images, declared_level)` — 2026-11-06.
 - [ ] Prompt + schéma de **génération** du parcours (§6) dans `llm/` (réutiliser `RichText`).
 - [x] Modèles `ingestion` et `learning` (§4) — 2026-11-06.
-- [ ] App `ingestion` : upload (validation type/taille, hash par utilisateur, quota/jour), extraction vision, édition de l'énoncé, suppression du fichier après validation, support PDF (conversion pages → images).
+- [x] App `ingestion` — 2026-11-06 :
+  - upload : type détecté par le contenu, taille ≤ `UPLOAD_MAX_BYTES`, PDF ≤ `UPLOAD_MAX_PDF_PAGES` (pypdfium2), hash SHA-256 par élève (renvoi idempotent ; un upload en erreur peut être renvoyé), nom de fichier aléatoire ;
+  - extraction Celery (`ingestion.tasks.extract_upload`, idempotente) : pages → JPEG ≤ 2048 px, orientation appliquée, **EXIF supprimés** ; correspondance de chapitre par `chapter_hint` (sinon conservé en texte) ; erreurs traduites en messages pour l'élève ;
+  - correction / suppression / validation des énoncés (mêmes règles `ExerciseStatement` que le LLM) ;
+  - fichier supprimé quand tous les énoncés sont validés, en cas d'erreur, ou après `UPLOAD_FILE_RETENTION_HOURS` (`manage.py purge_upload_files` / tâche `purge_expired_upload_files`).
 - [ ] Événements de progression en SSE.
 - [ ] App `learning` : génération du parcours (schéma §6, types V1), validation Pydantic, stockage JSON.
 - [ ] App `grading` : `exact`, `normalized_text`, `numeric`, `symbolic` (SymPy), `chem_balance` + revérification post-génération.
 - [ ] Endpoints tentatives / réponses / indices / offline / sync / progress.
 - [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.
-- [ ] Quota d'uploads par jour et par utilisateur (throttling DRF).
+- [x] Quota d'uploads par jour et par élève (`UPLOAD_DAILY_QUOTA`, jour calendaire `Africa/Brazzaville`, compté en base plutôt que par throttling DRF pour ne pas décompter les fichiers refusés) — 2026-11-06.
+- [ ] Planifier la purge des fichiers (Celery beat ou cron de l'hébergeur) et la remise en `error` des uploads bloqués en `reading` (worker arrêté).
 - [ ] `Mastery` + calcul « révision du jour ».
 - [x] Reset des migrations (décision du porteur du projet : aucune donnée à conserver) ; `cot_for_stem` supprimée — 2026-11-06.
 

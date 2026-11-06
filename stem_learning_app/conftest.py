@@ -40,6 +40,11 @@ def auth_client(user):
 
 
 @pytest.fixture
+def other_client(other_user):
+    return _client_for(other_user)
+
+
+@pytest.fixture
 def admin_client(admin_user):
     return _client_for(admin_user)
 

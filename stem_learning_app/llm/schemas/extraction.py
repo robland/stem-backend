@@ -24,11 +24,15 @@ def _max_exercises(value):
     return value
 
 
+# Partagé avec l'API (correction de l'énoncé par l'élève) : mêmes règles que pour le LLM.
+ExerciseStatement = Annotated[RichText, AfterValidator(_not_empty), max_length(5000)]
+
+
 # Pas de valeurs par défaut : le mode strict exige que tous les champs soient présents (null autorisé).
 class ExtractedExerciseOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    statement: Annotated[RichText, AfterValidator(_not_empty), max_length(5000)]
+    statement: ExerciseStatement
     subject: SubjectCodeLiteral | None
     level: LevelLiteral | None
     chapter_hint: Annotated[str, max_length(200)] | None

@@ -145,6 +145,7 @@ frontend/
 - Utiliser **uniquement** `packages/api-client`, régénéré depuis `/api/schema/` du backend (`pnpm api:generate`). Pas d'appels `fetch` écrits à la main.
 - Auth : access token JWT en mémoire ; refresh en cookie httpOnly (web) / `expo-secure-store` (mobile, refresh envoyé dans le body) ; rafraîchissement automatique sur 401.
 - Progression d'analyse : SSE `GET /api/uploads/{id}/events` (fallback polling `GET /api/uploads/{id}` toutes les 3 s si SSE indisponible).
+- Uploads : l'API n'expose jamais le fichier envoyé → **garder la photo locale** pour l'afficher à côté de l'énoncé pendant la correction. Réenvoyer le même fichier est sans risque (réponse `200`, même upload). Sur `429`, afficher le quota atteint et l'heure de `Retry-After`. Compresser avant envoi (≤ 10 Mo, côté long ~2048 px suffit).
 - Si un endpoint nécessaire n'existe pas encore : **ne pas l'inventer côté front**, le signaler et l'ajouter à l'état d'avancement du backend.
 
 ---
