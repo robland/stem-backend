@@ -143,6 +143,15 @@ Règles :
 - **Feedback** : réponse fausse → `common_mistakes` correspondant (formules comparées symboliquement, nombres numériquement, sinon texte normalisé ; QCM par id ou contenu d'option), sinon feedback spécifique du moteur (ex. « Le nombre d'atomes de O n'est pas conservé »), sinon message générique.
 - Une réponse mal formée (mauvais type JSON, champ inconnu) est une erreur du client (`InvalidResponse` → HTTP 400), pas une réponse fausse.
 
+
+### 5.2 Tentatives, indices et score (`learning.attempts`)
+
+- **Parcours guidé** : les étapes se font **dans l'ordre** ; seule l'étape en cours accepte réponses et indices.
+- Une étape est **close** quand elle est réussie, ou **échouée** après `ATTEMPT_MAX_WRONG_ANSWERS` (3) réponses fausses. La correction rédigée (`explanation`) n'est renvoyée qu'à la clôture.
+- **Indices** : `POST attempts/{id}/hints` donne le niveau suivant (1 → 3) ; le 3ᵉ n'est disponible que par là (absent du contenu public). Hors-ligne, le nombre d'indices consultés est transmis avec chaque réponse (`hints_used`, on garde le maximum).
+- **Score d'une étape** (sur 100) : réussie → `max(0, 100 − 20 × indices − 20 × réponses fausses)` ; échouée → 0. **Score de la tentative** = moyenne des étapes (arrondie) ; `finished_at` quand toutes les étapes sont closes.
+- **Hors-ligne** : le client génère l'`id` de la tentative et le `client_uuid` de chaque réponse ; `POST sync` rejoue les réponses par `answered_at` (horodatages futurs ramenés à maintenant), **recorrige tout côté serveur** et ignore tout verdict envoyé par le client. Un renvoi ne crée aucun doublon (`duplicate`) ; une réponse refusée (`rejected` + `reason`) ne bloque pas les suivantes. Limites : 50 tentatives et 100 réponses par tentative par appel.
+
 ---
 
 ## 6. Contrat de contenu : le schéma d'activités
@@ -240,10 +249,11 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | POST | `extracted-exercises/{id}/validate` | fige l'énoncé (matière et niveau requis) ; fichier d'origine supprimé quand tous les énoncés sont validés |
 | POST | `extracted-exercises/{id}/generate` | énoncé validé requis → `202` génération lancée ; `200` parcours existant ou repris du cache ; `400` matière non ouverte ; `429` quota journalier. Réponse = parcours (`id`, `generation_status`…) |
 | GET | `exercises` (pagination par curseur, 20) / `exercises/{id}` / `exercises/{id}/offline` | cf. §6.4 ; `content` vaut `null` tant que `generation_status` ≠ `ready` |
-| POST | `exercises/{id}/attempts` | démarre une tentative |
-| POST | `attempts/{id}/answers` | `{step_id, response, client_uuid}` → `{is_correct, feedback}` |
-| POST | `attempts/{id}/hints` | `{step_id}` → indice suivant |
-| POST | `sync` | lot de tentatives/réponses faites hors-ligne (idempotent via `client_uuid`) |
+| POST | `exercises/{id}/attempts` | `{id?, started_at?}` → `201` tentative (`200` si `id` déjà créé) ; parcours `ready` requis |
+| GET | `attempts/{id}` | score, indices, `current_step_id`, état de chaque étape (`pending` / `succeeded` / `failed`) |
+| POST | `attempts/{id}/answers` | `{step_id, response, client_uuid, answered_at?, hints_used?}` → `{is_correct, feedback, details, step, explanation, attempt}` ; `201`, ou `200` si `client_uuid` déjà reçu |
+| POST | `attempts/{id}/hints` | `{step_id}` → `{hint, level, total}` (étape en cours uniquement) |
+| POST | `sync` | `{attempts: [{id, exercise, started_at, answers: [...]}]}` → statut par tentative et par réponse (cf. §5.2) |
 | GET | `progress` | maîtrise par chapitre, révision du jour |
 
 Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère son client TypeScript à partir de lui. Toute route doit avoir serializers et annotations drf-spectacular corrects.
@@ -253,7 +263,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction ; 368 tests verts.
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction, tentatives et synchro hors-ligne ; 398 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -263,7 +273,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - ✅ Upload → extraction asynchrone → correction/validation des énoncés (`/api/uploads/`, `/api/extracted-exercises/`).
 - ✅ Génération des parcours (Maths, PC) : schéma §6 validé, relance corrective, cache par énoncé, quota ; consultation sans réponses et paquet hors-ligne.
 - ✅ Moteurs de correction et revérification des parcours (`grading`).
-- ❌ Endpoints tentatives / réponses / indices / sync, progression, SSE, défis.
+- ✅ Tentatives : démarrage, réponses corrigées avec feedback, indices, score, synchronisation hors-ligne idempotente.
+- ❌ Progression (`Mastery`, révision du jour), SSE, défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -291,7 +302,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [ ] Événements de progression en SSE.
 - [x] App `learning` : génération asynchrone (`learning.tasks.generate_exercise_task`, idempotente), un parcours par énoncé (relance si erreur), cache inter-élèves par `content_hash` (énoncé normalisé + matière + niveau), quota `GENERATION_DAILY_QUOTA` (copies du cache non comptées), matières ouvertes `GENERATION_SUBJECTS` ; API `exercises` — 2026-11-06.
 - [x] App `grading` : moteurs pour les 13 types V1 (texte normalisé, nombres FR/EN, équivalence symbolique SymPy sécurisée, chimie atomes + charges + électrons, unités), feedback par erreurs typiques, revérification post-génération intégrée à `learning` (`needs_review`, `review_notes`) — 2026-11-06.
-- [ ] Endpoints tentatives / réponses / indices / offline / sync / progress.
+- [x] Endpoints tentatives / réponses / indices / sync (`learning.attempts`, §5.2) — 2026-11-06.
+- [ ] Endpoint `progress`.
 - [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.
 - [x] Quota d'uploads par jour et par élève (`UPLOAD_DAILY_QUOTA`, jour calendaire `Africa/Brazzaville`, compté en base plutôt que par throttling DRF pour ne pas décompter les fichiers refusés) — 2026-11-06.
 - [ ] Planifier la purge des fichiers (Celery beat ou cron de l'hébergeur) et la remise en `error` des uploads bloqués en `reading` (worker arrêté).

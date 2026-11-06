@@ -1,9 +1,12 @@
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import viewsets
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 
+from . import attempts as attempt_service
+from .attempt_serializers import AttemptSerializer, AttemptStartSerializer
 from .models import Exercise
 from .serializers import ExerciseDetailSerializer, ExerciseOfflineSerializer, ExerciseSerializer
 
@@ -31,6 +34,8 @@ class ExerciseViewSet(viewsets.ReadOnlyModelViewSet):
             return ExerciseSerializer
         if self.action == "offline":
             return ExerciseOfflineSerializer
+        if self.action == "attempts":
+            return AttemptStartSerializer
         return ExerciseDetailSerializer
 
     @extend_schema(
@@ -40,3 +45,26 @@ class ExerciseViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def offline(self, request, pk=None):
         return Response(self.get_serializer(self.get_object()).data)
+
+    @extend_schema(
+        request=AttemptStartSerializer,
+        responses={
+            201: AttemptSerializer,
+            200: OpenApiResponse(AttemptSerializer, description="Tentative déjà créée (même id)."),
+            400: OpenApiResponse(description="Parcours pas encore prêt."),
+        },
+        summary="Démarrer une tentative",
+    )
+    @action(detail=True, methods=["post"])
+    def attempts(self, request, pk=None):
+        exercise = self.get_object()
+        serializer = AttemptStartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            attempt, created = attempt_service.start_attempt(
+                request.user, exercise,
+                serializer.validated_data.get("id"), serializer.validated_data.get("started_at"),
+            )
+        except attempt_service.AttemptError as e:
+            raise ValidationError({"detail": str(e)})
+        return Response(AttemptSerializer(attempt).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

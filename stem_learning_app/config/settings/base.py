@@ -64,6 +64,9 @@ GENERATION_DAILY_QUOTA = int(os.environ.get("GENERATION_DAILY_QUOTA", "20"))
 # Essais de génération quand la revérification (app grading) détecte une erreur ; ensuite « needs_review ».
 GENERATION_ATTEMPTS = int(os.environ.get("GENERATION_ATTEMPTS", "2"))
 
+# Tentatives (README §5.2) : une étape est close après réussite ou après ce nombre d'erreurs.
+ATTEMPT_MAX_WRONG_ANSWERS = int(os.environ.get("ATTEMPT_MAX_WRONG_ANSWERS", "3"))
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
 CORS_ALLOW_CREDENTIALS = True

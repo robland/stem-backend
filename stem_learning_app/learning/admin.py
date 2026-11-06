@@ -17,7 +17,7 @@ class StepAnswerInline(admin.TabularInline):
 
 @admin.register(Attempt)
 class AttemptAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "exercise", "mode", "score", "started_at", "finished_at"]
+    list_display = ["id", "user", "exercise", "mode", "score", "hints_used", "started_at", "finished_at"]
     list_filter = ["mode"]
     inlines = [StepAnswerInline]
 

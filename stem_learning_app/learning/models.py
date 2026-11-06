@@ -71,8 +71,11 @@ class Attempt(models.Model):
     mode = models.CharField(max_length=10, choices=Mode.choices, default=Mode.SOLO)
     started_at = models.DateTimeField()
     finished_at = models.DateTimeField(null=True, blank=True)
-    score = models.PositiveIntegerField(default=0)
+    # Score sur 100 (cf. README §5.2), calculé à chaque réponse.
+    score = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(100)])
     hints_used = models.PositiveSmallIntegerField(default=0)
+    # Indices consultés par étape : {"s1": 2}. Les indices consultés hors-ligne arrivent par la synchro.
+    hints = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-started_at"]
@@ -94,7 +97,8 @@ class StepAnswer(models.Model):
     received_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["answered_at"]
+        ordering = ["answered_at", "received_at"]
+        indexes = [models.Index(fields=["attempt", "step_id"])]
 
     def __str__(self):
         return f"{self.step_id} ({'juste' if self.is_correct else 'faux'})"

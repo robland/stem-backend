@@ -135,6 +135,7 @@ frontend/
 - Quand un parcours de l'élève est ouvert (ou sur action « Télécharger »), récupérer `GET /api/exercises/{id}/offline` (contenu **avec réponses**, propriétaire uniquement) et le stocker localement (IndexedDB web / SQLite mobile).
 - En hors-ligne : correction locale via `packages/grading` (tous les modes **sauf** `llm_rubric`) ; les activités `free_text` sont mises en attente « sera corrigé à la reconnexion ».
 - Chaque réponse reçoit un `client_uuid` (UUID v4) et entre dans une **file de synchronisation** ; à la reconnexion, `POST /api/sync` (idempotent). Le serveur fait foi : en cas d'écart, afficher le résultat serveur.
+- Une tentative hors-ligne reçoit son `id` (UUID v4) côté client ; chaque réponse transmet `answered_at` et `hints_used` (indices consultés sur l'étape). Reproduire localement les règles de progression et de score du backend README §5.2 (étapes dans l'ordre, 3 erreurs max, −20 par indice et par erreur).
 - **Défis : en ligne uniquement** (correction serveur, pas de réponses en local).
 - Indicateur réseau discret + nombre d'éléments en attente de synchro.
 

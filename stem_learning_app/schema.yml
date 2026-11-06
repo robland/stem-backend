@@ -5,6 +5,109 @@ info:
   description: Apprentissage guidé étape par étape (chain of thought) pour collégiens
     et lycéens.
 paths:
+  /api/attempts/{id}/:
+    get:
+      operationId: attempts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) attempt.
+        required: true
+      tags:
+      - attempts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: ''
+  /api/attempts/{id}/answers/:
+    post:
+      operationId: attempts_answers_create
+      summary: Envoyer la réponse à l'étape en cours
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) attempt.
+        required: true
+      tags:
+      - attempts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResult'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResult'
+          description: Réponse déjà reçue (même client_uuid).
+        '400':
+          description: Réponse mal formée, étape non en cours, tentative terminée.
+  /api/attempts/{id}/hints/:
+    post:
+      operationId: attempts_hints_create
+      description: Chaque indice consulté réduit le score de l'étape (README §5.2).
+      summary: Obtenir l'indice suivant de l'étape en cours
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) attempt.
+        required: true
+      tags:
+      - attempts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hint'
+          description: ''
+        '400':
+          description: Étape non en cours ou indices épuisés.
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -278,6 +381,48 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExerciseDetail'
           description: ''
+  /api/exercises/{id}/attempts/:
+    post:
+      operationId: exercises_attempts_create
+      summary: Démarrer une tentative
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttemptStart'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttemptStart'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttemptStart'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: Tentative déjà créée (même id).
+        '400':
+          description: Parcours pas encore prêt.
   /api/exercises/{id}/offline/:
     get:
       operationId: exercises_offline_retrieve
@@ -456,6 +601,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Me'
           description: ''
+  /api/sync/:
+    post:
+      operationId: sync_create
+      description: 'Idempotent : les tentatives (id) et réponses (client_uuid) déjà
+        reçues ne sont pas dupliquées. Le serveur recorrige chaque réponse ; son verdict
+        fait foi.'
+      summary: Synchroniser les tentatives faites hors-ligne
+      tags:
+      - sync
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+          description: ''
   /api/uploads/:
     post:
       operationId: uploads_create
@@ -512,6 +687,117 @@ paths:
           description: ''
 components:
   schemas:
+    AnswerCreate:
+      type: object
+      properties:
+        step_id:
+          type: string
+          maxLength: 20
+        response:
+          description: Format selon le type d'activité (README §5.1).
+        client_uuid:
+          type: string
+          format: uuid
+          description: 'Généré par le client : un renvoi ne crée pas de doublon.'
+        answered_at:
+          type: string
+          format: date-time
+        hints_used:
+          type: integer
+          maximum: 3
+          minimum: 0
+          description: Indices consultés hors-ligne pour cette étape.
+      required:
+      - client_uuid
+      - response
+      - step_id
+    AnswerResult:
+      type: object
+      properties:
+        is_correct:
+          type: boolean
+        feedback:
+          type: string
+          nullable: true
+        details:
+          type: object
+          additionalProperties: {}
+          description: Détail par élément (trous, points, paires…).
+        step:
+          $ref: '#/components/schemas/StepState'
+        explanation:
+          type: string
+          nullable: true
+          description: Correction rédigée, une fois l'étape close.
+        attempt:
+          $ref: '#/components/schemas/Attempt'
+      required:
+      - attempt
+      - details
+      - explanation
+      - feedback
+      - is_correct
+      - step
+    Attempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        exercise:
+          type: string
+          format: uuid
+          readOnly: true
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        score:
+          type: integer
+          readOnly: true
+        hints_used:
+          type: integer
+          readOnly: true
+        current_step_id:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Étape à traiter ; null si la tentative est finie.
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StepState'
+          readOnly: true
+      required:
+      - current_step_id
+      - exercise
+      - finished_at
+      - hints_used
+      - id
+      - mode
+      - score
+      - started_at
+      - steps
+    AttemptStart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 'Généré par le client (hors-ligne) : rend l''appel idempotent.'
+        started_at:
+          type: string
+          format: date-time
     BlankEnum:
       enum:
       - ''
@@ -769,6 +1055,30 @@ components:
         * `ready` - Prêt
         * `needs_review` - À revoir
         * `error` - Erreur
+    Hint:
+      type: object
+      properties:
+        step_id:
+          type: string
+        hint:
+          type: string
+        level:
+          type: integer
+        total:
+          type: integer
+      required:
+      - hint
+      - level
+      - step_id
+      - total
+    HintRequest:
+      type: object
+      properties:
+        step_id:
+          type: string
+          maxLength: 20
+      required:
+      - step_id
     LevelEnum:
       enum:
       - 6e
@@ -811,6 +1121,14 @@ components:
       - date_joined
       - phone
       - pseudo
+    ModeEnum:
+      enum:
+      - solo
+      - challenge
+      type: string
+      description: |-
+        * `solo` - Solo
+        * `challenge` - Défi
     PaginatedExerciseList:
       type: object
       required:
@@ -906,18 +1224,36 @@ components:
       - password
       - phone
       - pseudo
-    StatusEnum:
+    StepState:
+      type: object
+      properties:
+        step_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/StepStateStatusEnum'
+        wrong_answers:
+          type: integer
+        hints_used:
+          type: integer
+        score:
+          type: integer
+          description: 'Sur 100 : 100 − 20 par indice − 20 par erreur ; 0 si échouée.'
+      required:
+      - hints_used
+      - score
+      - status
+      - step_id
+      - wrong_answers
+    StepStateStatusEnum:
       enum:
       - pending
-      - reading
-      - extracted
-      - error
+      - succeeded
+      - failed
       type: string
       description: |-
-        * `pending` - En attente
-        * `reading` - Lecture en cours
-        * `extracted` - Énoncés extraits
-        * `error` - Erreur
+        * `pending` - pending
+        * `succeeded` - succeeded
+        * `failed` - failed
     Subject:
       type: object
       properties:
@@ -945,6 +1281,132 @@ components:
         * `francais` - Français
         * `anglais` - Anglais
         * `histoire_geo` - Histoire-Géographie
+    SyncAnswer:
+      type: object
+      properties:
+        step_id:
+          type: string
+          maxLength: 20
+        response:
+          description: Format selon le type d'activité (README §5.1).
+        client_uuid:
+          type: string
+          format: uuid
+          description: 'Généré par le client : un renvoi ne crée pas de doublon.'
+        answered_at:
+          type: string
+          format: date-time
+        hints_used:
+          type: integer
+          maximum: 3
+          minimum: 0
+          description: Indices consultés hors-ligne pour cette étape.
+      required:
+      - answered_at
+      - client_uuid
+      - response
+      - step_id
+    SyncAnswerResult:
+      type: object
+      properties:
+        client_uuid:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SyncAnswerResultStatusEnum'
+        is_correct:
+          type: boolean
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+      required:
+      - client_uuid
+      - is_correct
+      - reason
+      - status
+    SyncAnswerResultStatusEnum:
+      enum:
+      - accepted
+      - duplicate
+      - rejected
+      type: string
+      description: |-
+        * `accepted` - accepted
+        * `duplicate` - duplicate
+        * `rejected` - rejected
+    SyncAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        exercise:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAnswer'
+      required:
+      - answers
+      - exercise
+      - id
+      - started_at
+    SyncAttemptResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SyncAttemptResultStatusEnum'
+        reason:
+          type: string
+          nullable: true
+        attempt:
+          allOf:
+          - $ref: '#/components/schemas/Attempt'
+          nullable: true
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAnswerResult'
+      required:
+      - answers
+      - attempt
+      - id
+      - reason
+      - status
+    SyncAttemptResultStatusEnum:
+      enum:
+      - synced
+      - rejected
+      type: string
+      description: |-
+        * `synced` - synced
+        * `rejected` - rejected
+    SyncRequest:
+      type: object
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAttempt'
+      required:
+      - attempts
+    SyncResult:
+      type: object
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAttemptResult'
+      required:
+      - attempts
     TokenObtainPair:
       type: object
       properties:
@@ -989,7 +1451,7 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/UploadStatusEnum'
           readOnly: true
         error_message:
           type: string
@@ -1019,6 +1481,18 @@ components:
           description: Photo (JPEG, PNG, WebP) ou PDF.
       required:
       - file
+    UploadStatusEnum:
+      enum:
+      - pending
+      - reading
+      - extracted
+      - error
+      type: string
+      description: |-
+        * `pending` - En attente
+        * `reading` - Lecture en cours
+        * `extracted` - Énoncés extraits
+        * `error` - Erreur
   securitySchemes:
     jwtAuth:
       type: http
