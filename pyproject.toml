@@ -1,39 +1,41 @@
 [project]
 name = "stemlearningapp"
 version = "0.1.0"
-description = ""
+description = "API d'apprentissage guidé (chain of thought) pour collégiens et lycéens — programme de la République du Congo."
 authors = [
-    {name = "Leon OKOMBE",email = "okombeleonrobland@gmail.com"}
+    { name = "Leon OKOMBE", email = "okombeleonrobland@gmail.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-    "django (==5.2.0)",
-    "celery (>=5.6.2,<6.0.0)",
-    "redis (>=7.1.0,<8.0.0)",
-    "openai (>=2.15.0,<3.0.0)",
-    "pillow (>=12.1.0,<13.0.0)",
-    "python-dotenv (>=1.2.1,<2.0.0)",
-    "djangorestframework (>=3.16.1,<4.0.0)",
-    "django-cors-headers (>=4.9.0,<5.0.0)",
-    "drf-spectacular (>=0.29.0,<0.30.0)",
-    "djangorestframework-simplejwt[crypto] (>=5.5.1,<6.0.0)",
-    "dj-database-url (>=3.1.2,<4.0.0)",
-    "django-storages (>=1.14.6,<2.0.0)",
-    "django-supabase-storage (>=1.0.1,<2.0.0)",
-    "psycopg2 (>=2.9.12,<3.0.0)",
-    "psycopg2-binary (>=2.9.12,<3.0.0)",
-    "gunicorn (>=26.0.0,<27.0.0)",
-    "uvicorn (>=0.46.0,<0.47.0)"
+    "django>=5.2,<5.3",
+    "djangorestframework>=3.16.1,<4",
+    "djangorestframework-simplejwt[crypto]>=5.5.1,<6",
+    "drf-spectacular>=0.29.0,<0.30",
+    "django-cors-headers>=4.9.0,<5",
+    "dj-database-url>=3.1.2,<4",
+    "psycopg[binary]>=3.2,<4",
+    "celery[redis]>=5.6.2,<6",
+    "openai>=2.15.0,<3",
+    "pillow>=12.1.0,<13",
+    "python-dotenv>=1.2.1,<2",
+    "whitenoise>=6.9,<7",
+    "gunicorn>=23,<27",
 ]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
-test = [
-    "pytest (>=9.0.2,<10.0.0)",
-    "pytest-django (>=4.11.1,<5.0.0)"
+dev = [
+    "pytest>=9.0.2,<10",
+    "pytest-django>=4.11.1,<5",
 ]
+
+[tool.uv]
+# Application Django, pas une librairie : uv ne l'installe pas comme paquet.
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["stem_learning_app"]
+testpaths = ["stem_learning_app"]
+python_files = ["test_*.py"]
+# --ds (ligne de commande) prime sur la variable DJANGO_SETTINGS_MODULE définie dans Docker.
+addopts = "--strict-markers --ds=config.settings.test"

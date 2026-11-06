@@ -1,38 +1,61 @@
-# Dockerfile
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
 
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# ---------------------------------------------------------------------------
+# base : Python + uv + dépendances de production
+# ---------------------------------------------------------------------------
+FROM python:3.12-slim AS base
 
-#dossier de travail
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /bin/
+
+ENV LANG=C.UTF-8 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
+
 WORKDIR /app
 
-# Installation des dépendances système
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential \
-      libpq-dev  \
-      curl  \
-      ca-certificates \
-      && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-dev
 
-# Installation de Poetry
-RUN pip install  poetry gunicorn
+# ---------------------------------------------------------------------------
+# dev : + dépendances de développement (pytest…). Le code est monté en volume.
+# ---------------------------------------------------------------------------
+FROM base AS dev
 
-# On copie uniquement les dépendances
-COPY pyproject.toml poetry.lock* /app/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked
 
-RUN poetry config virtualenvs.create false  && poetry install --no-root --no-interaction --no-ansi
-RUN poetry add gunicorn
+WORKDIR /app/stem_learning_app
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
-# On copie le code
+# ---------------------------------------------------------------------------
+# prod (cible par défaut) : code copié, statiques collectés, utilisateur non root
+# ---------------------------------------------------------------------------
+FROM base AS prod
 
-COPY . /app/
+COPY pyproject.toml uv.lock /app/
+COPY stem_learning_app /app/stem_learning_app
+COPY docker/start-web.sh /app/docker/start-web.sh
 
-# Collect static
-# RUN python manage.py collectstatic --noinput
+WORKDIR /app/stem_learning_app
 
-# Commande d'entrée
-CMD ["gunicorn", "stem_learning_app.config.wsgi:application", "--bind", "0.0.0.0:8000"]
+ENV DJANGO_SETTINGS_MODULE=config.settings.prod
 
+# collectstatic n'a besoin d'aucun secret réel.
+RUN SECRET_KEY=collectstatic ALLOWED_HOSTS=localhost DATABASE_URL=sqlite:// \
+    python manage.py collectstatic --noinput \
+    && useradd --system --uid 1000 --no-create-home app \
+    && mkdir -p /app/stem_learning_app/media \
+    && chown -R app /app/stem_learning_app/media
 
+USER app
+
+EXPOSE 8000
+CMD ["sh", "/app/docker/start-web.sh"]
