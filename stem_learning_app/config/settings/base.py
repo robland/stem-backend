@@ -49,7 +49,9 @@ CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 INSTALLED_APPS = [
     'accounts',
-    'cot_for_stem',
+    'curriculum',
+    'ingestion',
+    'learning',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -110,7 +112,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication
 
-AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTH_USER_MODEL = 'accounts.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -152,6 +154,11 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': "Apprentissage guidé étape par étape (chain of thought) pour collégiens et lycéens.",
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # Noms stables des énumérations partagées avec le client TypeScript généré.
+    'ENUM_NAME_OVERRIDES': {
+        'SubjectCodeEnum': 'curriculum.choices.SubjectCode',
+        'LevelEnum': 'curriculum.choices.Level',
+    },
 }
 
 

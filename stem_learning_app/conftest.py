@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import CustomUser
+from accounts.models import User
 
 PASSWORD = "Mot-de-passe-solide-42"
 
@@ -14,12 +14,17 @@ def api_client():
 
 @pytest.fixture
 def user(db):
-    return CustomUser.objects.create_user(username="eleve", phone="+242061234567", password=PASSWORD)
+    return User.objects.create_user(phone="+242061234567", pseudo="eleve", password=PASSWORD, level="3e")
+
+
+@pytest.fixture
+def other_user(db):
+    return User.objects.create_user(phone="+242067654321", pseudo="camarade", password=PASSWORD, level="3e")
 
 
 @pytest.fixture
 def admin_user(db):
-    return CustomUser.objects.create_superuser(username="admin", password=PASSWORD, phone="+242069999999")
+    return User.objects.create_superuser(phone="+242069999999", pseudo="admin", password=PASSWORD)
 
 
 def _client_for(user):

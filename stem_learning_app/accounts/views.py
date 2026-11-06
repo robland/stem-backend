@@ -2,6 +2,7 @@ from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +10,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from accounts.serializer import RegisterSerializer
+from accounts.serializer import RegisterSerializer, MeSerializer
 
 
 def set_refresh_cookie(response, refresh):
@@ -89,6 +90,16 @@ class LogoutView(APIView):
         response = Response(status=status.HTTP_204_NO_CONTENT)
         delete_refresh_cookie(response)
         return response
+
+
+class MeView(RetrieveUpdateAPIView):
+    """Profil de l'élève connecté (niveau, série, pseudo)."""
+
+    serializer_class = MeSerializer
+    http_method_names = ["get", "patch"]
+
+    def get_object(self):
+        return self.request.user
 
 
 class RegisterView(APIView):

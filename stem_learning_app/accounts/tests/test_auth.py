@@ -3,7 +3,7 @@ from django.conf import settings
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import CustomUser
+from accounts.models import User
 from conftest import PASSWORD
 
 pytestmark = pytest.mark.django_db
@@ -12,27 +12,56 @@ COOKIE = settings.REFRESH_COOKIE_NAME
 
 
 def login(client, user):
-    return client.post(reverse("login"), {"username": user.username, "password": PASSWORD}, format="json")
+    return client.post(reverse("login"), {"phone": user.phone, "password": PASSWORD}, format="json")
 
 
 class TestRegister:
-    def test_creates_user_with_phone_and_pseudo_only(self, api_client):
+    def test_creates_user_with_phone_pseudo_and_level(self, api_client):
         response = api_client.post(
             reverse("register"),
-            {"phone": "+242 06 111 22 33", "username": "kimpa", "password": PASSWORD},
+            {"phone": "+242 06 111 22 33", "pseudo": "kimpa", "password": PASSWORD, "level": "Tle", "serie": "C"},
             format="json",
         )
 
         assert response.status_code == 201
         assert "password" not in response.data
-        user = CustomUser.objects.get(username="kimpa")
+        user = User.objects.get(pseudo="kimpa")
         assert user.phone == "+242061112233"
+        assert (user.level, user.serie) == ("Tle", "C")
         assert user.check_password(PASSWORD)
+
+    def test_requires_level(self, api_client):
+        response = api_client.post(
+            reverse("register"), {"phone": "+242061112233", "pseudo": "kimpa", "password": PASSWORD}, format="json"
+        )
+
+        assert response.status_code == 400
+        assert "level" in response.data
+
+    def test_rejects_unknown_level(self, api_client):
+        response = api_client.post(
+            reverse("register"),
+            {"phone": "+242061112233", "pseudo": "kimpa", "password": PASSWORD, "level": "CM2"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "level" in response.data
+
+    def test_rejects_duplicate_pseudo(self, api_client, user):
+        response = api_client.post(
+            reverse("register"),
+            {"phone": "+242061112233", "pseudo": user.pseudo, "password": PASSWORD, "level": "3e"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "pseudo" in response.data
 
     @pytest.mark.parametrize("phone", ["abc", "123", "+24206123456789012"])
     def test_rejects_invalid_phone(self, api_client, phone):
         response = api_client.post(
-            reverse("register"), {"phone": phone, "username": "kimpa", "password": PASSWORD}, format="json"
+            reverse("register"), {"phone": phone, "pseudo": "kimpa", "password": PASSWORD, "level": "3e"}, format="json"
         )
 
         assert response.status_code == 400
@@ -41,7 +70,7 @@ class TestRegister:
     def test_rejects_duplicate_phone_after_normalization(self, api_client, user):
         response = api_client.post(
             reverse("register"),
-            {"phone": "+242 06 123 45 67", "username": "autre", "password": PASSWORD},
+            {"phone": "+242 06 123 45 67", "pseudo": "autre", "password": PASSWORD, "level": "3e"},
             format="json",
         )
 
@@ -50,7 +79,9 @@ class TestRegister:
 
     def test_rejects_weak_password(self, api_client):
         response = api_client.post(
-            reverse("register"), {"phone": "+242061112233", "username": "kimpa", "password": "1234"}, format="json"
+            reverse("register"),
+            {"phone": "+242061112233", "pseudo": "kimpa", "password": "1234", "level": "3e"},
+            format="json",
         )
 
         assert response.status_code == 400
@@ -69,7 +100,7 @@ class TestLogin:
         assert cookie["path"] == settings.REFRESH_COOKIE_PATH
 
     def test_rejects_wrong_password(self, api_client, user):
-        response = api_client.post(reverse("login"), {"username": user.username, "password": "faux"}, format="json")
+        response = api_client.post(reverse("login"), {"phone": user.phone, "password": "faux"}, format="json")
 
         assert response.status_code == 401
 
@@ -124,3 +155,28 @@ class TestLogout:
         response = api_client.post(reverse("logout"))
 
         assert response.status_code == 204
+
+
+class TestMe:
+    def test_requires_authentication(self, api_client):
+        assert api_client.get(reverse("me")).status_code == 401
+
+    def test_returns_profile(self, auth_client, user):
+        response = auth_client.get(reverse("me"))
+
+        assert response.status_code == 200
+        assert response.data["pseudo"] == user.pseudo
+        assert response.data["level"] == "3e"
+
+    def test_updates_level_and_serie_but_not_phone(self, auth_client, user):
+        response = auth_client.patch(
+            reverse("me"), {"level": "2nde", "serie": "C", "phone": "+242060000000"}, format="json"
+        )
+
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert (user.level, user.serie) == ("2nde", "C")
+        assert user.phone == "+242061234567"
+
+    def test_put_is_not_allowed(self, auth_client):
+        assert auth_client.put(reverse("me"), {"pseudo": "x"}, format="json").status_code == 405

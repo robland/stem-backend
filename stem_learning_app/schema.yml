@@ -94,49 +94,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Register'
           description: ''
-  /api/stem/all-exercises/:
+  /api/curriculum/chapters/:
     get:
-      operationId: stem_all_exercises_list
-      tags:
-      - stem
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Exercise'
-          description: ''
-  /api/stem/all-exercises/{id}/:
-    get:
-      operationId: stem_all_exercises_retrieve
+      operationId: curriculum_chapters_list
       parameters:
-      - in: path
-        name: id
+      - in: query
+        name: level
         schema:
           type: string
-          format: uuid
-        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
-        required: true
+          enum:
+          - 1re
+          - 2nde
+          - 3e
+          - 4e
+          - 5e
+          - 6e
+          - Tle
+        description: Niveau scolaire
+      - in: query
+        name: subject
+        schema:
+          type: string
+          enum:
+          - anglais
+          - francais
+          - histoire_geo
+          - maths
+          - physique_chimie
+          - svt
+        description: Code de la matière
       tags:
-      - stem
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Exercise'
-          description: ''
-  /api/stem/chapters/:
-    get:
-      operationId: stem_chapters_list
-      tags:
-      - stem
+      - curriculum
       security:
       - jwtAuth: []
       responses:
@@ -148,9 +136,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/Chapter'
           description: ''
-  /api/stem/chapters/{id}/:
+  /api/curriculum/chapters/{id}/:
     get:
-      operationId: stem_chapters_retrieve
+      operationId: curriculum_chapters_retrieve
       parameters:
       - in: path
         name: id
@@ -159,8 +147,33 @@ paths:
           format: uuid
         description: Un(une) Chaîne UUID identifiant ce(cette) chapter.
         required: true
+      - in: query
+        name: level
+        schema:
+          type: string
+          enum:
+          - 1re
+          - 2nde
+          - 3e
+          - 4e
+          - 5e
+          - 6e
+          - Tle
+        description: Niveau scolaire
+      - in: query
+        name: subject
+        schema:
+          type: string
+          enum:
+          - anglais
+          - francais
+          - histoire_geo
+          - maths
+          - physique_chimie
+          - svt
+        description: Code de la matière
       tags:
-      - stem
+      - curriculum
       security:
       - jwtAuth: []
       responses:
@@ -170,82 +183,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Chapter'
           description: ''
-  /api/stem/document_processing/{id}/:
-    post:
-      operationId: stem_document_processing_create
-      description: Relance l'analyse d'un document (administration).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - stem
-      security:
-      - jwtAuth: []
-      responses:
-        '202':
-          description: No response body
-  /api/stem/exercises/:
+  /api/curriculum/subjects/:
     get:
-      operationId: stem_exercises_retrieve
+      operationId: curriculum_subjects_list
       tags:
-      - stem
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Exercise'
-          description: ''
-  /api/stem/qcm/{id}/:
-    get:
-      operationId: stem_qcm_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - stem
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/QCM'
-          description: ''
-  /api/stem/step/{id}/:
-    get:
-      operationId: stem_step_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - stem
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Step'
-          description: ''
-  /api/stem/subjects/:
-    get:
-      operationId: stem_subjects_list
-      tags:
-      - stem
+      - curriculum
       security:
       - jwtAuth: []
       responses:
@@ -257,19 +199,31 @@ paths:
                 items:
                   $ref: '#/components/schemas/Subject'
           description: ''
-  /api/stem/subjects/{id}/:
+  /api/curriculum/subjects/{code}/:
     get:
-      operationId: stem_subjects_retrieve
+      operationId: curriculum_subjects_retrieve
       parameters:
       - in: path
-        name: id
+        name: code
         schema:
+          enum:
+          - maths
+          - physique_chimie
+          - svt
+          - francais
+          - anglais
+          - histoire_geo
           type: string
-          format: uuid
-        description: Un(une) Chaîne UUID identifiant ce(cette) subject.
+          description: |-
+            * `maths` - Mathématiques
+            * `physique_chimie` - Physique-Chimie
+            * `svt` - Sciences de la Vie et de la Terre
+            * `francais` - Français
+            * `anglais` - Anglais
+            * `histoire_geo` - Histoire-Géographie
         required: true
       tags:
-      - stem
+      - curriculum
       security:
       - jwtAuth: []
       responses:
@@ -279,17 +233,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Subject'
           description: ''
-  /api/stem/upload/document/:
-    post:
-      operationId: stem_upload_document_create
+  /api/me/:
+    get:
+      operationId: me_retrieve
+      description: Profil de l'élève connecté (niveau, série, pseudo).
       tags:
-      - stem
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UploadDocument'
-        required: true
+      - me
       security:
       - jwtAuth: []
       responses:
@@ -297,10 +246,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UploadDocument'
+                $ref: '#/components/schemas/Me'
+          description: ''
+    patch:
+      operationId: me_partial_update
+      description: Profil de l'élève connecté (niveau, série, pseudo).
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMe'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
           description: ''
 components:
   schemas:
+    BlankEnum:
+      enum:
+      - ''
     Chapter:
       type: object
       properties:
@@ -308,152 +285,142 @@ components:
           type: string
           format: uuid
           readOnly: true
-        name:
-          type: string
         subject:
           allOf:
-          - $ref: '#/components/schemas/Subject'
+          - $ref: '#/components/schemas/SubjectCodeEnum'
           readOnly: true
-        subject_id:
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        name:
           type: string
-          format: uuid
-          writeOnly: true
+          maxLength: 200
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
       required:
       - id
+      - level
       - name
       - subject
-      - subject_id
-    Exercise:
+    LevelEnum:
+      enum:
+      - 6e
+      - 5e
+      - 4e
+      - 3e
+      - 2nde
+      - 1re
+      - Tle
+      type: string
+      description: |-
+        * `6e` - 6e
+        * `5e` - 5e
+        * `4e` - 4e
+        * `3e` - 3e
+        * `2nde` - 2nde
+        * `1re` - 1re
+        * `Tle` - Terminale
+    Me:
       type: object
       properties:
-        id:
+        phone:
           type: string
-          format: uuid
           readOnly: true
-        title:
+        pseudo:
           type: string
-          maxLength: 255
-        chapter:
-          allOf:
-          - $ref: '#/components/schemas/Chapter'
-          readOnly: true
-        solved:
-          type: object
-          additionalProperties: {}
-          nullable: true
-          readOnly: true
-        statement:
-          type: string
+          maxLength: 30
         level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        serie:
           type: string
-          maxLength: 50
-        raw_text: {}
-      required:
-      - chapter
-      - id
-      - raw_text
-      - solved
-      - statement
-    FileTypeEnum:
-      enum:
-      - image
-      - pdf
-      type: string
-      description: |-
-        * `image` - Image
-        * `pdf` - PDF
-    ProcessingStatusEnum:
-      enum:
-      - pending
-      - analyzing
-      - generating
-      - done
-      - error
-      type: string
-      description: |-
-        * `pending` - En attente
-        * `analyzing` - Analyse
-        * `generating` - Génération QCM
-        * `done` - Terminé
-        * `error` - Erreur
-    QCM:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        question:
-          type: string
-        created_at:
+          maxLength: 10
+        date_joined:
           type: string
           format: date-time
           readOnly: true
-        step:
-          type: integer
       required:
-      - created_at
-      - id
-      - question
-      - step
+      - date_joined
+      - phone
+      - pseudo
+    PatchedMe:
+      type: object
+      properties:
+        phone:
+          type: string
+          readOnly: true
+        pseudo:
+          type: string
+          maxLength: 30
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        serie:
+          type: string
+          maxLength: 10
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
     Register:
       type: object
-      description: 'Seules données personnelles collectées : le téléphone. `username`
-        est un pseudo d''affichage.'
+      description: 'Seule donnée personnelle collectée : le téléphone. `pseudo` est
+        un nom d''affichage.'
       properties:
         phone:
           type: string
           maxLength: 25
-        username:
+        pseudo:
           type: string
-          title: Nom d’utilisateur
-          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
-            et les caractères « @ », « . », « + », « - » et « _ ».
-          pattern: ^[\w.@+-]+$
-          maxLength: 150
+          maxLength: 30
         password:
           type: string
           writeOnly: true
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        serie:
+          type: string
+          maxLength: 10
       required:
+      - level
       - password
       - phone
-      - username
-    Step:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        objective:
-          type: string
-        explanation:
-          type: string
-        qcm:
-          type: integer
-      required:
-      - id
-      - objective
-      - qcm
+      - pseudo
     Subject:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
+        code:
+          $ref: '#/components/schemas/SubjectCodeEnum'
         name:
           type: string
-          maxLength: 25
-        chapters:
-          type: array
-          items:
-            type: string
+          maxLength: 100
       required:
-      - chapters
-      - id
+      - code
+      - name
+    SubjectCodeEnum:
+      enum:
+      - maths
+      - physique_chimie
+      - svt
+      - francais
+      - anglais
+      - histoire_geo
+      type: string
+      description: |-
+        * `maths` - Mathématiques
+        * `physique_chimie` - Physique-Chimie
+        * `svt` - Sciences de la Vie et de la Terre
+        * `francais` - Français
+        * `anglais` - Anglais
+        * `histoire_geo` - Histoire-Géographie
     TokenObtainPair:
       type: object
       properties:
-        username:
+        phone:
           type: string
           writeOnly: true
         password:
@@ -468,8 +435,8 @@ components:
       required:
       - access
       - password
+      - phone
       - refresh
-      - username
     TokenRefresh:
       type: object
       properties:
@@ -481,22 +448,6 @@ components:
       required:
       - access
       - refresh
-    UploadDocument:
-      type: object
-      properties:
-        file:
-          type: string
-          format: uri
-        file_type:
-          $ref: '#/components/schemas/FileTypeEnum'
-        processing_status:
-          $ref: '#/components/schemas/ProcessingStatusEnum'
-        user:
-          type: integer
-          nullable: true
-      required:
-      - file
-      - file_type
   securitySchemes:
     jwtAuth:
       type: http
