@@ -82,7 +82,7 @@ stem_learning_app/
 └── challenges/        (V2) défis publics/privés, modération, classements
 ```
 
-> L'app actuelle `cot_for_stem` sera progressivement scindée dans ces apps (cf. §8, Phase 0/1).
+> L'ancienne app `cot_for_stem` a été supprimée au démarrage de la Phase 1 (migrations repartant de zéro) ; son prompt et son service vision restent consultables dans l'historique git (commit `fd1d3ca`).
 
 ---
 
@@ -220,15 +220,14 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 0 terminée (branche `feature/backend-phase0`), 33 tests verts (SQLite local et PostgreSQL Docker).
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données cible et migrations propres en place, 39 tests verts.
 
-### Existant (prototype)
-- ✅ Auth JWT : inscription (téléphone normalisé + pseudo + mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout (blacklist + suppression du cookie). Connexion encore par `username` (passage au téléphone en Phase 1).
-- ✅ Tous les endpoints exigent un JWT ; référentiel et exercices en lecture seule ; relance d'analyse réservée aux admins.
-- ✅ Upload d'image lié à l'utilisateur + pipeline Celery d'analyse OpenAI (vision) → création `Subject`/`Chapter`/`Exercise`.
-- ⚠️ Génération des étapes/QCM : **cassée** (`generate_qcm` itère sur le dict de l'exercice au lieu de `raw_text["steps"]`) — sera remplacée en Phase 1, ne pas corriger isolément.
-- ⚠️ PDF envoyés comme image JPEG ; `Document.file_hash` unique globalement (doublon entre élèves) ; `Chapter.name` unique globalement — traités en Phase 1.
-- ❌ Réponse aux QCM, progression, hors-ligne, défis.
+### Existant
+- ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
+- ✅ `GET/PATCH /api/me/` (pseudo, niveau, série ; téléphone non modifiable).
+- ✅ Référentiel `GET /api/curriculum/subjects/` et `/api/curriculum/chapters/?subject=&level=` (lecture seule) ; 6 matières créées par migration.
+- ✅ Modèles `ingestion` (`Upload`, `ExtractedExercise`) et `learning` (`Exercise`, `Attempt`, `StepAnswer`, `Mastery`) avec contraintes (hash unique par élève, `client_uuid` unique, une maîtrise par chapitre, score ≤ 100) ; admin Django pour tous.
+- ❌ Aucun endpoint d'upload, d'extraction ni de génération pour l'instant (l'ancien pipeline a été retiré) ; correction, progression, hors-ligne, défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -242,18 +241,20 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [x] Corrections ponctuelles : filtre `ExerciseView` (non réassigné), `context` passé au serializer (`solved`), upload lié à `request.user` et `request.FILES`, client OpenAI créé à la demande, plus d'écriture de `openai.response.json`, plus d'affichage de la clé OpenAI dans Celery.
 
 ### Phase 1 — V1 backend (Maths + Physique-Chimie)
-- [ ] Modèle `User` cible (téléphone + pseudo, niveau, série) ; suppression de l'usage nom/prénom.
-- [ ] App `curriculum` + fixtures du programme congolais (Maths, PC ; 6e→Tle).
+- [x] Modèle `User` cible (`AbstractBaseUser` : téléphone, pseudo, niveau, série ; aucun nom/prénom/e-mail) + `/api/me/` — 2026-11-06.
+- [x] App `curriculum` : `Subject` (codes figés, seed par migration), `Chapter` unique par (matière, niveau, nom), API en lecture seule — 2026-11-06.
+- [ ] **Chapitres du programme congolais** (Maths, PC ; 6e→Tle) : à saisir à partir des programmes officiels fournis par le porteur du projet (ne pas inventer), puis data migration ou fixture.
 - [ ] App `llm` : client abstrait, prompts versionnés, **structured outputs** (JSON Schema dérivé des modèles Pydantic).
+- [x] Modèles `ingestion` et `learning` (§4) — 2026-11-06.
 - [ ] App `ingestion` : upload (validation type/taille, hash par utilisateur, quota/jour), extraction vision, édition de l'énoncé, suppression du fichier après validation, support PDF (conversion pages → images).
 - [ ] Événements de progression en SSE.
 - [ ] App `learning` : génération du parcours (schéma §6, types V1), validation Pydantic, stockage JSON.
 - [ ] App `grading` : `exact`, `normalized_text`, `numeric`, `symbolic` (SymPy), `chem_balance` + revérification post-génération.
 - [ ] Endpoints tentatives / réponses / indices / offline / sync / progress.
-- [ ] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo`.
+- [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.
 - [ ] Quota d'uploads par jour et par utilisateur (throttling DRF).
 - [ ] `Mastery` + calcul « révision du jour ».
-- [ ] Migration des données/modèles de `cot_for_stem` vers les nouvelles apps (ou reset des migrations si aucune donnée de prod à préserver — **à confirmer avec le porteur du projet**).
+- [x] Reset des migrations (décision du porteur du projet : aucune donnée à conserver) ; `cot_for_stem` supprimée — 2026-11-06.
 
 ### Phase 2 — V2
 - [ ] App `challenges` : défis publics (catalogue matière/chapitre/niveau) et privés (code/lien), chrono, indices on/off, notation, points auteur.
