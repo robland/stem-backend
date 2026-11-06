@@ -22,12 +22,12 @@ ERROR_FILE_MISSING = "Le document n'est plus disponible : renvoie-le."
 
 # --- Quota -------------------------------------------------------------------
 
-def _start_of_today():
+def start_of_today():
     return timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def uploads_left_today(user):
-    used = Upload.objects.filter(user=user, created_at__gte=_start_of_today()).count()
+    used = Upload.objects.filter(user=user, created_at__gte=start_of_today()).count()
     return max(settings.UPLOAD_DAILY_QUOTA - used, 0)
 
 

@@ -5,7 +5,7 @@ import openai
 from django.conf import settings
 from pydantic import ValidationError
 
-from llm.exceptions import LLMError, LLMOutputInvalid, LLMRefusal
+from llm.exceptions import LLMError, LLMOutputInvalid, LLMRefusal, summarize_validation_error
 
 from .base import LLMClient, LLMResult
 
@@ -45,7 +45,9 @@ class OpenAIClient(LLMClient):
         except (openai.LengthFinishReasonError, openai.ContentFilterFinishReasonError) as e:
             raise LLMOutputInvalid(f"Réponse LLM tronquée ou filtrée ({prompt.id}).") from e
         except ValidationError as e:
-            raise LLMOutputInvalid(f"Réponse LLM hors schéma ({prompt.id}).") from e
+            raise LLMOutputInvalid(
+                f"Réponse LLM hors schéma ({prompt.id}).", summarize_validation_error(e)
+            ) from e
         except openai.OpenAIError as e:
             raise LLMError(f"Appel LLM en échec ({prompt.id}) : {type(e).__name__}") from e
 

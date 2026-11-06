@@ -9,6 +9,9 @@ from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
+from learning import services as learning_services
+from learning.serializers import ExerciseSerializer
+
 from . import services
 from .documents import DocumentError, detect_file_type
 from .models import ExtractedExercise, Upload
@@ -116,3 +119,28 @@ class ExtractedExerciseViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin
                 raise ValidationError(missing)
             services.validate_exercise(exercise)
         return Response(self.get_serializer(exercise).data)
+
+    @extend_schema(
+        request=None,
+        responses={
+            202: OpenApiResponse(ExerciseSerializer, description="Génération lancée : suivre generation_status."),
+            200: OpenApiResponse(ExerciseSerializer, description="Parcours existant ou repris du cache."),
+            400: OpenApiResponse(description="Énoncé non validé ou matière non ouverte."),
+            429: OpenApiResponse(description="Quota journalier atteint (en-tête Retry-After)."),
+        },
+        summary="Générer le parcours guidé d'un énoncé validé",
+        description="Suivre l'avancement via `GET /api/exercises/{id}/`.",
+    )
+    @action(detail=True, methods=["post"])
+    def generate(self, request, pk=None):
+        extracted = self.get_object()
+        try:
+            exercise, launched = learning_services.request_generation(extracted)
+        except learning_services.GenerationRefused as e:
+            raise ValidationError(str(e))
+        except learning_services.QuotaExceeded as e:
+            raise Throttled(wait=e.wait, detail="Tu as atteint le nombre de parcours autorisés aujourd'hui.")
+        return Response(
+            ExerciseSerializer(exercise).data,
+            status=status.HTTP_202_ACCEPTED if launched else status.HTTP_200_OK,
+        )

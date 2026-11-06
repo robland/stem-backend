@@ -233,6 +233,76 @@ paths:
               schema:
                 $ref: '#/components/schemas/Subject'
           description: ''
+  /api/exercises/:
+    get:
+      operationId: exercises_list
+      summary: Mes parcours
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: La valeur du curseur de pagination.
+        schema:
+          type: string
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExerciseList'
+          description: ''
+  /api/exercises/{id}/:
+    get:
+      operationId: exercises_retrieve
+      summary: Parcours sans les réponses attendues
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseDetail'
+          description: ''
+  /api/exercises/{id}/offline/:
+    get:
+      operationId: exercises_offline_retrieve
+      description: 'Inclut les réponses attendues : réservé au propriétaire du parcours,
+        jamais aux défis.'
+      summary: Parcours complet pour la correction hors-ligne
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseOffline'
+          description: ''
   /api/extracted-exercises/{id}/:
     patch:
       operationId: extracted_exercises_partial_update
@@ -285,6 +355,40 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/extracted-exercises/{id}/generate/:
+    post:
+      operationId: extracted_exercises_generate_create
+      description: Suivre l'avancement via `GET /api/exercises/{id}/`.
+      summary: Générer le parcours guidé d'un énoncé validé
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+          description: 'Génération lancée : suivre generation_status.'
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+          description: Parcours existant ou repris du cache.
+        '400':
+          description: Énoncé non validé ou matière non ouverte.
+        '429':
+          description: Quota journalier atteint (en-tête Retry-After).
   /api/extracted-exercises/{id}/validate/:
     post:
       operationId: extracted_exercises_validate_create
@@ -437,6 +541,174 @@ components:
       - level
       - name
       - subject
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        generation_status:
+          allOf:
+          - $ref: '#/components/schemas/GenerationStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chapter
+      - created_at
+      - error_message
+      - exam
+      - generation_status
+      - id
+      - level
+      - subject
+      - title
+    ExerciseDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        generation_status:
+          allOf:
+          - $ref: '#/components/schemas/GenerationStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        schema_version:
+          type: string
+          readOnly: true
+        content:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: 'Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json)
+            sans les champs qui donnent la réponse : activity.answer, common_mistakes,
+            explanation, dernier indice. null tant que le parcours n''est pas prêt.'
+      required:
+      - chapter
+      - content
+      - created_at
+      - error_message
+      - exam
+      - generation_status
+      - id
+      - level
+      - schema_version
+      - subject
+      - title
+    ExerciseOffline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        generation_status:
+          allOf:
+          - $ref: '#/components/schemas/GenerationStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        schema_version:
+          type: string
+          readOnly: true
+        content:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: 'Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json)
+            sans les champs qui donnent la réponse : activity.answer, common_mistakes,
+            explanation, dernier indice. null tant que le parcours n''est pas prêt.'
+      required:
+      - chapter
+      - content
+      - created_at
+      - error_message
+      - exam
+      - generation_status
+      - id
+      - level
+      - schema_version
+      - subject
+      - title
     ExtractedExercise:
       type: object
       properties:
@@ -483,6 +755,20 @@ components:
       description: |-
         * `image` - Image
         * `pdf` - PDF
+    GenerationStatusEnum:
+      enum:
+      - pending
+      - generating
+      - ready
+      - needs_review
+      - error
+      type: string
+      description: |-
+        * `pending` - En attente
+        * `generating` - Génération
+        * `ready` - Prêt
+        * `needs_review` - À revoir
+        * `error` - Erreur
     LevelEnum:
       enum:
       - 6e
@@ -525,6 +811,25 @@ components:
       - date_joined
       - phone
       - pseudo
+    PaginatedExerciseList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exercise'
     PatchedExtractedExercise:
       type: object
       properties:

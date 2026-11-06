@@ -159,7 +159,7 @@ frontend/
 - [ ] Initialiser le monorepo (pnpm, Turborepo, TS strict, ESLint, Prettier, Vitest).
 - [ ] `packages/ui` : tokens (couleurs, typo, espacements, clair/sombre), composants de base.
 - [ ] `packages/api-client` : génération depuis l'OpenAPI + hooks TanStack Query + gestion du refresh.
-- [ ] `packages/content-schema` : types Zod du schéma `1.0`.
+- [ ] `packages/content-schema` : types Zod du schéma `1.0`, **générés** depuis `stem_learning_app/schemas/exercise-content.schema.json` (ex. json-schema-to-zod) plutôt qu'écrits à la main. Le contenu public (`GET /api/exercises/{id}`) n'a ni `activity.answer`, ni `common_mistakes`, ni `explanation`, et seulement 2 indices sur 3.
 - [ ] Maquettes validées : onboarding, accueil, scanner, résolution, bilan, progrès.
 - [ ] Auth + onboarding (téléphone, pseudo, niveau/série, matières).
 - [ ] Scanner web : upload (fichier/caméra), recadrage, compression, suivi SSE, choix d'exercice, édition de l'énoncé avec aperçu LaTeX.

@@ -36,6 +36,10 @@ class Exercise(models.Model):
     generation_status = models.CharField(
         max_length=20, choices=GenerationStatus.choices, default=GenerationStatus.PENDING
     )
+    # Message destiné à l'élève (jamais de détail technique).
+    error_message = models.TextField(blank=True)
+    # Prompt ayant produit le contenu (ex. « generation.v1 ») ; vide si copié depuis le cache.
+    prompt_id = models.CharField(max_length=50, blank=True)
     # Empreinte de l'énoncé normalisé : déduplication et cache de génération.
     content_hash = models.CharField(max_length=64, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -43,6 +47,12 @@ class Exercise(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            # Un seul parcours par énoncé extrait : une relance réutilise la même ligne.
+            models.UniqueConstraint(
+                fields=["source"], condition=models.Q(source__isnull=False), name="unique_exercise_per_source"
+            ),
+        ]
 
     def __str__(self):
         return self.title or f"Parcours {self.id}"

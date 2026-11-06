@@ -124,6 +124,10 @@ Règles :
 
 **C'est le contrat central entre backend, LLM et frontend.** Toute modification ⇒ incrémenter `schema_version`, mettre à jour ce README **et** `frontend/README.md`.
 
+- **Source de vérité : `llm/schemas/exercise.py`** (Pydantic). `GeneratedExercise` = sortie du LLM ; `ExerciseContent` = contenu stocké (`+ schema_version`, `+ statement`, l'énoncé validé par l'élève, jamais réécrit par le LLM).
+- JSON Schema exporté pour le front : `stem_learning_app/schemas/exercise-content.schema.json` (`python manage.py export_content_schema` ; un test échoue s'il n'est pas à jour).
+- Les validateurs vérifient la **cohérence interne** (bonne réponse parmi les options, trous ↔ réponses, permutation, un coefficient par espèce, flèches ↔ signes…). Une réponse invalide du LLM est relancée une fois avec la liste des erreurs, puis passe en `error`.
+
 ### 6.1 Texte riche
 Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX inline `$...$` / bloc `$$...$$` + chimie via `\ce{...}` (mhchem). **Pas de HTML** (risque XSS) — le prompt actuel qui génère du HTML doit être abandonné. Les backslashes LaTeX sont normaux (`\frac`) : le hack `//` actuel est **interdit**, les *structured outputs* garantissent l'échappement JSON.
 
@@ -132,10 +136,6 @@ Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX in
 ```json
 {
   "schema_version": "1.0",
-  "subject": "maths",
-  "chapter_id": "uuid",
-  "level": "3e",
-  "exam_target": "BEPC",
   "title": "Variations d'une fonction du second degré",
   "statement": "Étudier les variations de $f(x) = x^2 - 4x + 3$.",
   "intuition": { "mental_image": "…", "example": "…" },
@@ -147,9 +147,9 @@ Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX in
       "skill": "derivation_polynome",
       "activity": {
         "type": "formula_input",
+        "grading": "symbolic",
         "prompt": "Complète : $f'(x) = \\placeholder{}$",
-        "answer": { "expression": "2x - 4" },
-        "grading": "symbolic"
+        "answer": { "expression": "2*x - 4", "variables": ["x"] }
       },
       "hints": ["…", "…", "…"],
       "common_mistakes": [ { "pattern": "2x + 4", "feedback": "Attention au signe de $-4x$." } ],
@@ -160,23 +160,30 @@ Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX in
 }
 ```
 
+- Matière, chapitre, niveau et examen visé (`exam` : BEPC pour 6e→3e, BAC pour 2nde→Tle) sont des **champs de l'API** (`Exercise`), pas du contenu.
+- Étapes : `id` = `s1`, `s2`… (1 à 10) ; `skill` en snake_case ; **exactement 3 indices** (relance, méthode, quasi-solution) ; 0 à 5 `common_mistakes` ; 0 à 5 `recall`.
+- Tous les champs sont toujours présents (`null` quand sans objet) : contrainte des *structured outputs* stricts. Pas d'objet à clés libres : les associations sont des listes.
+- Expressions (`answer.expression`, `function`) : syntaxe ASCII lisible par SymPy (`*` explicite, `^`, `sqrt()`, `pi`).
+
 ### 6.3 Types d'activités
+
+Chaque activité porte `type`, `grading` et `prompt` (consigne, texte riche).
 
 | `type` | Matières | Données clés (`answer` = réponse attendue) | Correction | Version |
 |---|---|---|---|---|
-| `mcq` | toutes | `options[{id, content}]`, `multiple`, `answer.option_ids` | exact | V1 |
+| `mcq` | toutes | `options[{id, content}]` (2–6), `multiple`, `answer.option_ids` | exact | V1 |
 | `true_false` | toutes | `answer.value` | exact | V1 |
-| `short_answer` | toutes | `answer.accepted[]`, `normalize` | normalized_text / numeric | V1 |
-| `fill_blanks` | toutes | `text` avec `{{1}}`…, `answer.blanks{}` | normalized_text | V1 |
-| `matching` | toutes | `left[]`, `right[]`, `answer.pairs` | exact | V1 |
-| `ordering` | toutes | `items[]`, `answer.order` | exact | V1 |
-| `formula_input` | Maths, PC | `prompt` avec `\placeholder{}`, `answer.expression` | symbolic | V1 |
-| `graph_points` | Maths, PC | `axes`, `expected_function`, `points_to_place`, `tolerance` | numeric | V1 |
-| `graph_parameters` | Maths, PC | `function` paramétrée, `sliders[]`, question associée | dépend de la question | V1 |
-| `variation_table` | Maths | `x_values`, `answer.signs`, `answer.arrows` | exact | V1 |
+| `short_answer` | toutes | `answer.accepted[]` (texte) ou `answer.value` + `tolerance` (absolue) + `unit` (numérique) | normalized_text / numeric | V1 |
+| `fill_blanks` | toutes | `text` avec `{{1}}`…, `answer.blanks[{id, accepted[]}]` | normalized_text | V1 |
+| `matching` | toutes | `left[{id, content}]`, `right[…]`, `answer.pairs[{left_id, right_id}]` | exact | V1 |
+| `ordering` | toutes | `items[{id, content}]` (mélangés par le client), `answer.order[ids]` | exact | V1 |
+| `formula_input` | Maths, PC | `prompt` avec exactement un `\placeholder{}`, `answer.expression`, `answer.variables` | symbolic | V1 |
+| `graph_points` | Maths, PC | `axes`, `points_to_place[x]`, `tolerance`, `answer.function`, `answer.points[{x, y}]` | numeric | V1 |
+| `graph_parameters` | Maths, PC | `axes`, `function` paramétrée (`a*x + b`), `sliders[{name, min, max, step, initial}]`, `tolerance`, `answer.values[{name, value}]` | numeric | V1 |
+| `variation_table` | Maths | `x_values` (texte riche), `answer.signs` (`+`/`-`), `answer.arrows` (`up`/`down`), un par intervalle, `answer.function` (optionnel) | exact | V1 |
 | `chem_balance` | PC | `reactants[]`, `products[]`, `answer.coefficients` | chem_balance | V1 |
 | `chem_formula` | PC | `answer.formula` | exact (normalisé) | V1 |
-| `unit_conversion` | PC | `value`, `from_unit`, `to_unit`, `tolerance` | numeric | V1 |
+| `unit_conversion` | PC | `value`, `from_unit`, `to_unit`, `tolerance` (relative), `answer.value` | numeric | V1 |
 | `conjugation` | Français, Anglais | `verb`, `tense`, `person`, `answer.form` ; feedback radical/terminaison | normalized_text | V2 |
 | `free_text` | Français (résumé, dissertation par étapes) | `rubric[]` (critères), `max_words` | llm_rubric | V2 |
 | `label_diagram` | SVT | `asset`, `zones[]`, `labels[]`, `answer.mapping` | exact | V3 |
@@ -185,7 +192,7 @@ Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX in
 | `flashcards` | toutes (révision) | `cards[{front, back}]` | auto-évaluation | V3 |
 
 ### 6.4 Exposition des réponses
-- `GET /api/exercises/{id}` : contenu **sans** `answer`, `common_mistakes`, ni dernier niveau d'indice.
+- `GET /api/exercises/{id}` : contenu **sans** `activity.answer`, `common_mistakes`, `explanation` (la correction rédigée), ni dernier niveau d'indice (`learning.services.public_content`).
 - `GET /api/exercises/{id}/offline` : contenu **complet**, réservé au **propriétaire** du parcours (pas aux défis) pour la correction hors-ligne.
 - Défis : correction **toujours côté serveur, en ligne**.
 
@@ -206,8 +213,8 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | GET | `uploads/{id}/events` | **SSE** : progression (`reading`, `extracted`, `generating`, `step_ready`, `done`, `error`) |
 | PATCH / DELETE | `extracted-exercises/{id}` | correction (`statement`, `subject`, `level`, `chapter`) / écarter un énoncé — refusé (`400`) une fois validé |
 | POST | `extracted-exercises/{id}/validate` | fige l'énoncé (matière et niveau requis) ; fichier d'origine supprimé quand tous les énoncés sont validés |
-| POST | `extracted-exercises/{id}/generate` | lance la génération → `{exercise_id}` |
-| GET | `exercises` / `exercises/{id}` / `exercises/{id}/offline` | cf. §6.4 |
+| POST | `extracted-exercises/{id}/generate` | énoncé validé requis → `202` génération lancée ; `200` parcours existant ou repris du cache ; `400` matière non ouverte ; `429` quota journalier. Réponse = parcours (`id`, `generation_status`…) |
+| GET | `exercises` (pagination par curseur, 20) / `exercises/{id}` / `exercises/{id}/offline` | cf. §6.4 ; `content` vaut `null` tant que `generation_status` ≠ `ready` |
 | POST | `exercises/{id}/attempts` | démarre une tentative |
 | POST | `attempts/{id}/answers` | `{step_id, response, client_uuid}` → `{is_correct, feedback}` |
 | POST | `attempts/{id}/hints` | `{step_id}` → indice suivant |
@@ -221,7 +228,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation) ; 125 tests verts.
+> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours ; 199 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -229,7 +236,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - ✅ Référentiel `GET /api/curriculum/subjects/` et `/api/curriculum/chapters/?subject=&level=` (lecture seule) ; 6 matières créées par migration.
 - ✅ Modèles `ingestion` (`Upload`, `ExtractedExercise`) et `learning` (`Exercise`, `Attempt`, `StepAnswer`, `Mastery`) avec contraintes (hash unique par élève, `client_uuid` unique, une maîtrise par chapitre, score ≤ 100) ; admin Django pour tous.
 - ✅ Upload → extraction asynchrone → correction/validation des énoncés (`/api/uploads/`, `/api/extracted-exercises/`).
-- ❌ Génération des parcours, correction, progression, hors-ligne, SSE, défis.
+- ✅ Génération des parcours (Maths, PC) : schéma §6 validé, relance corrective, cache par énoncé, quota ; consultation sans réponses et paquet hors-ligne.
+- ❌ Correction des réponses, tentatives, progression, SSE, défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -247,7 +255,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [x] App `curriculum` : `Subject` (codes figés, seed par migration), `Chapter` unique par (matière, niveau, nom), API en lecture seule — 2026-11-06.
 - [ ] **Chapitres du programme congolais** (Maths, PC ; 6e→Tle) : à saisir à partir des programmes officiels fournis par le porteur du projet (ne pas inventer), puis data migration ou fixture.
 - [x] App `llm` : client abstrait `LLMClient` (`OpenAIClient` via `chat.completions.parse`, `FakeLLMClient` pour les tests), modèle par tâche (`LLM_MODELS`), prompts versionnés immuables (`extraction.v1`), schémas Pydantic compatibles structured outputs stricts, type `RichText` (HTML refusé), service `extract_exercises(images, declared_level)` — 2026-11-06.
-- [ ] Prompt + schéma de **génération** du parcours (§6) dans `llm/` (réutiliser `RichText`).
+- [x] Schéma de contenu §6 en Pydantic (13 types V1, validateurs de cohérence, compatible mode strict) + prompt `generation.v1` + `generate_exercise` avec relance corrective + export JSON Schema — 2026-11-06.
 - [x] Modèles `ingestion` et `learning` (§4) — 2026-11-06.
 - [x] App `ingestion` — 2026-11-06 :
   - upload : type détecté par le contenu, taille ≤ `UPLOAD_MAX_BYTES`, PDF ≤ `UPLOAD_MAX_PDF_PAGES` (pypdfium2), hash SHA-256 par élève (renvoi idempotent ; un upload en erreur peut être renvoyé), nom de fichier aléatoire ;
@@ -255,7 +263,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
   - correction / suppression / validation des énoncés (mêmes règles `ExerciseStatement` que le LLM) ;
   - fichier supprimé quand tous les énoncés sont validés, en cas d'erreur, ou après `UPLOAD_FILE_RETENTION_HOURS` (`manage.py purge_upload_files` / tâche `purge_expired_upload_files`).
 - [ ] Événements de progression en SSE.
-- [ ] App `learning` : génération du parcours (schéma §6, types V1), validation Pydantic, stockage JSON.
+- [x] App `learning` : génération asynchrone (`learning.tasks.generate_exercise_task`, idempotente), un parcours par énoncé (relance si erreur), cache inter-élèves par `content_hash` (énoncé normalisé + matière + niveau), quota `GENERATION_DAILY_QUOTA` (copies du cache non comptées), matières ouvertes `GENERATION_SUBJECTS` ; API `exercises` — 2026-11-06.
+- [ ] Revérification post-génération par les moteurs `grading` (SymPy, chimie) → `needs_review` (cf. §5).
 - [ ] App `grading` : `exact`, `normalized_text`, `numeric`, `symbolic` (SymPy), `chem_balance` + revérification post-génération.
 - [ ] Endpoints tentatives / réponses / indices / offline / sync / progress.
 - [x] Connexion par **téléphone** (`USERNAME_FIELD = "phone"`), `username` → `pseudo` — 2026-11-06.

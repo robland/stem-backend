@@ -1,6 +1,6 @@
 from pydantic import ValidationError
 
-from llm.exceptions import LLMOutputInvalid
+from llm.exceptions import LLMOutputInvalid, summarize_validation_error
 
 from .base import LLMClient, LLMResult
 
@@ -34,5 +34,7 @@ class FakeLLMClient(LLMClient):
             try:
                 response = output_schema.model_validate(response)
             except ValidationError as e:
-                raise LLMOutputInvalid(f"Réponse LLM hors schéma ({prompt.id}).") from e
+                raise LLMOutputInvalid(
+                    f"Réponse LLM hors schéma ({prompt.id}).", summarize_validation_error(e)
+                ) from e
         return LLMResult(output=response, model=self.model_for(task), prompt_id=prompt.id)

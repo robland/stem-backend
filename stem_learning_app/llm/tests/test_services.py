@@ -2,7 +2,9 @@ import pytest
 
 from llm.clients import ImageInput
 from llm.exceptions import LLMOutputInvalid
-from llm.services import extract_exercises
+from llm.services import exam_for, extract_exercises, generate_exercise
+
+from .factories import generated_exercise, step
 
 IMAGE = ImageInput(data=b"\xff\xd8", mime_type="image/jpeg")
 
@@ -62,3 +64,54 @@ def test_extract_exercises_rejects_html_output(fake_llm):
 
     with pytest.raises(LLMOutputInvalid):
         extract_exercises([IMAGE])
+
+
+class TestGenerateExercise:
+    def generate(self):
+        return generate_exercise(
+            statement="Étudier les variations de $f(x) = x^2 - 4x + 3$.", subject="maths", level="3e",
+            chapter="Fonctions",
+        )
+
+    def test_generate(self, fake_llm):
+        fake_llm.queue(generated_exercise())
+
+        result = self.generate()
+
+        assert result.prompt_id == "generation.v1"
+        prompt = fake_llm.calls[0]["prompt"]
+        assert fake_llm.calls[0]["task"] == "generation"
+        assert "élève de 3e qui prépare le BEPC" in prompt.system
+        assert "trous notés {{1}}, {{2}}" in prompt.system
+        assert "Chapitre : Fonctions" in prompt.user
+        assert "$f(x) = x^2 - 4x + 3$" in prompt.user
+        assert "invalide" not in prompt.user
+
+    def test_invalid_output_is_retried_once_with_errors(self, fake_llm):
+        broken = generated_exercise(step(activity="mcq") | {"hints": ["un"]})
+        fake_llm.queue(broken, generated_exercise())
+
+        result = self.generate()
+
+        assert result.output.title
+        retry_prompt = fake_llm.calls[1]["prompt"].user
+        assert "Ta réponse précédente était invalide" in retry_prompt
+        assert "- steps.0.hints: Entre 3 et 3" in retry_prompt
+
+    def test_second_invalid_output_fails(self, fake_llm):
+        broken = generated_exercise(step() | {"hints": ["un"]})
+        fake_llm.queue(broken, broken)
+
+        with pytest.raises(LLMOutputInvalid):
+            self.generate()
+        assert len(fake_llm.calls) == 2
+
+    def test_truncated_output_is_not_retried(self, fake_llm):
+        fake_llm.queue(LLMOutputInvalid("tronquée"))
+
+        with pytest.raises(LLMOutputInvalid):
+            self.generate()
+        assert len(fake_llm.calls) == 1
+
+    def test_lycee_targets_bac(self):
+        assert (exam_for("3e"), exam_for("Tle")) == ("BEPC", "BAC")

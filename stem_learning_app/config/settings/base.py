@@ -56,6 +56,12 @@ UPLOAD_DAILY_QUOTA = int(os.environ.get("UPLOAD_DAILY_QUOTA", "10"))
 # Au-delà, le fichier est supprimé même si l'élève n'a pas validé ses énoncés.
 UPLOAD_FILE_RETENTION_HOURS = int(os.environ.get("UPLOAD_FILE_RETENTION_HOURS", "48"))
 
+# Génération des parcours (app learning)
+# Matières ouvertes à la génération (V1 : Maths et Physique-Chimie).
+GENERATION_SUBJECTS = env_list("GENERATION_SUBJECTS", "maths,physique_chimie")
+# Générations par élève et par jour (les parcours repris du cache ne comptent pas).
+GENERATION_DAILY_QUOTA = int(os.environ.get("GENERATION_DAILY_QUOTA", "20"))
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
 CORS_ALLOW_CREDENTIALS = True
