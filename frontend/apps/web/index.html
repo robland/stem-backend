@@ -11,7 +11,8 @@
       // Thème appliqué avant le premier rendu (évite un flash clair en mode sombre).
       try {
         var p = JSON.parse(localStorage.getItem("stem.preferences") || "{}");
-        var dark = p.theme === "dark" || (p.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        var dark =
+          p.theme === "dark" || (p.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme = dark ? "dark" : "light";
         if (p.dyslexicFont) document.documentElement.dataset.font = "dyslexic";
       } catch (e) {}

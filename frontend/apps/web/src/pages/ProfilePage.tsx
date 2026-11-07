@@ -44,10 +44,14 @@ function AccountForm({ me }: { me: Me }) {
     <Card>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <h2 className="text-lg font-bold">{t.profile.account}</h2>
-        <p className="text-sm text-muted">
-          {t.profile.phone} : <span className="font-semibold text-fg">{me.phone}</span>
+        <p className="text-muted text-sm">
+          {t.profile.phone} : <span className="text-fg font-semibold">{me.phone}</span>
         </p>
-        <Field label={t.register.pseudo} hint={t.register.pseudoHint} error={formState.errors.pseudo?.message}>
+        <Field
+          label={t.register.pseudo}
+          hint={t.register.pseudoHint}
+          error={formState.errors.pseudo?.message}
+        >
           {({ id, describedBy, invalid }) => (
             <Input
               id={id}
@@ -85,7 +89,9 @@ function AccountForm({ me }: { me: Me }) {
             </Field>
           ) : null}
         </div>
-        {update.isError && !Object.keys(formState.errors).length ? <Alert>{errorMessage(update.error)}</Alert> : null}
+        {update.isError && !Object.keys(formState.errors).length ? (
+          <Alert>{errorMessage(update.error)}</Alert>
+        ) : null}
         {update.isSuccess && !formState.isDirty ? <Alert tone="success">{t.common.saved}</Alert> : null}
         <Button type="submit" loading={update.isPending} disabled={!formState.isDirty} className="self-start">
           {t.common.save}
@@ -105,9 +111,12 @@ function PreferencesCard() {
         columns={3}
         value={prefs.theme}
         onChange={(theme) => setPreferences({ theme })}
-        options={(Object.keys(t.profile.themes) as Theme[]).map((value) => ({ value, label: t.profile.themes[value] }))}
+        options={(Object.keys(t.profile.themes) as Theme[]).map((value) => ({
+          value,
+          label: t.profile.themes[value],
+        }))}
       />
-      <label className="flex min-h-touch cursor-pointer items-start gap-3">
+      <label className="min-h-touch flex cursor-pointer items-start gap-3">
         <input
           type="checkbox"
           checked={prefs.dyslexicFont}
@@ -116,7 +125,7 @@ function PreferencesCard() {
         />
         <span>
           <span className="font-semibold">{t.profile.dyslexicFont}</span>
-          <span className="block text-sm text-muted">{t.profile.dyslexicFontHint}</span>
+          <span className="text-muted block text-sm">{t.profile.dyslexicFontHint}</span>
         </span>
       </label>
     </Card>

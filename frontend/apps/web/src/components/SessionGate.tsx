@@ -15,8 +15,8 @@ export function SessionGate({ children }: { children: ReactNode }) {
 
   if (status === "unknown") {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 text-muted">
-        <span className="text-xl font-bold text-primary">{APP_NAME}</span>
+      <div className="text-muted flex min-h-dvh flex-col items-center justify-center gap-4">
+        <span className="text-primary text-xl font-bold">{APP_NAME}</span>
         <Spinner label={t.common.loading} />
       </div>
     );

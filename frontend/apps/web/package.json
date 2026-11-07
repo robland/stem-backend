@@ -14,6 +14,7 @@
   "dependencies": {
     "@fontsource/opendyslexic": "^5.1.0",
     "@hookform/resolvers": "^5.0.1",
+    "@stem/activities": "workspace:*",
     "@stem/api-client": "workspace:*",
     "@stem/content-schema": "workspace:*",
     "@stem/ui": "workspace:*",

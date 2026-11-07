@@ -30,10 +30,16 @@ const schema = z
 type Values = z.infer<typeof schema>;
 
 // Champs validés à chaque étape ; les erreurs du serveur ramènent à l'étape du champ fautif.
-const STEP_FIELDS: FieldPath<Values>[][] = [["phone", "pseudo", "password"], ["level", "serie"], ["subjects"], ["goal"]];
+const STEP_FIELDS: FieldPath<Values>[][] = [
+  ["phone", "pseudo", "password"],
+  ["level", "serie"],
+  ["subjects"],
+  ["goal"],
+];
 const SERVER_FIELDS: FieldPath<Values>[] = ["phone", "pseudo", "password", "level", "serie"];
 
-const defaultGoal = (level: Level | undefined): Goal => (level === "3e" ? "bepc" : level === "Tle" ? "bac" : "devoirs");
+const defaultGoal = (level: Level | undefined): Goal =>
+  level === "3e" ? "bepc" : level === "Tle" ? "bac" : "devoirs";
 
 /**
  * Onboarding : compte → classe (et série au lycée) → matières → objectif.
@@ -49,7 +55,14 @@ export function RegisterPage() {
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { phone: "", pseudo: "", password: "", serie: "", subjects: ["maths", "physique_chimie"], goal: null },
+    defaultValues: {
+      phone: "",
+      pseudo: "",
+      password: "",
+      serie: "",
+      subjects: ["maths", "physique_chimie"],
+      goal: null,
+    },
     mode: "onTouched",
   });
   const { register, control, handleSubmit, trigger, watch, setValue, setError, formState } = form;
@@ -68,11 +81,22 @@ export function RegisterPage() {
     const phone = normalizePhone(values.phone);
     const serie = HIGH_SCHOOL_LEVELS.includes(values.level) ? values.serie : "";
     try {
-      await registerUser.mutateAsync({ phone, pseudo: values.pseudo.trim(), password: values.password, level: values.level, serie });
+      await registerUser.mutateAsync({
+        phone,
+        pseudo: values.pseudo.trim(),
+        password: values.password,
+        level: values.level,
+        serie,
+      });
     } catch (error) {
       if (applyFieldErrors(error, setError, SERVER_FIELDS) && isApiError(error)) {
         const fields = Object.keys(error.fieldErrors);
-        setStep(Math.max(0, STEP_FIELDS.findIndex((group) => group.some((f) => fields.includes(f)))));
+        setStep(
+          Math.max(
+            0,
+            STEP_FIELDS.findIndex((group) => group.some((f) => fields.includes(f))),
+          ),
+        );
       } else {
         setFailure(errorMessage(error));
       }
@@ -89,7 +113,7 @@ export function RegisterPage() {
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-semibold text-muted">{t.register.stepLabel(step + 1, total)}</p>
+        <p className="text-muted text-sm font-semibold">{t.register.stepLabel(step + 1, total)}</p>
         <ProgressBar value={((step + 1) / total) * 100} label={t.register.stepLabel(step + 1, total)} />
       </div>
 
@@ -99,21 +123,42 @@ export function RegisterPage() {
         <>
           <header>
             <h1 className="text-2xl font-bold">{t.register.accountTitle}</h1>
-            <p className="mt-1 text-muted">{t.register.accountSubtitle}</p>
+            <p className="text-muted mt-1">{t.register.accountSubtitle}</p>
           </header>
           <Field label={t.auth.phone} hint={t.auth.phoneHint} error={errors.phone?.message}>
             {({ id, describedBy, invalid }) => (
-              <Input id={id} type="tel" inputMode="tel" autoComplete="tel" aria-describedby={describedBy} aria-invalid={invalid} {...register("phone")} />
+              <Input
+                id={id}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                {...register("phone")}
+              />
             )}
           </Field>
           <Field label={t.register.pseudo} hint={t.register.pseudoHint} error={errors.pseudo?.message}>
             {({ id, describedBy, invalid }) => (
-              <Input id={id} autoComplete="nickname" maxLength={30} aria-describedby={describedBy} aria-invalid={invalid} {...register("pseudo")} />
+              <Input
+                id={id}
+                autoComplete="nickname"
+                maxLength={30}
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                {...register("pseudo")}
+              />
             )}
           </Field>
           <Field label={t.auth.password} hint={t.register.passwordHint} error={errors.password?.message}>
             {({ id, describedBy, invalid }) => (
-              <PasswordInput id={id} autoComplete="new-password" aria-describedby={describedBy} aria-invalid={invalid} {...register("password")} />
+              <PasswordInput
+                id={id}
+                autoComplete="new-password"
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                {...register("password")}
+              />
             )}
           </Field>
         </>
@@ -126,7 +171,14 @@ export function RegisterPage() {
             control={control}
             name="level"
             render={({ field }) => (
-              <ChoiceGroup legend={t.register.level} columns={4} options={LEVELS} value={field.value ?? null} onChange={field.onChange} error={errors.level?.message} />
+              <ChoiceGroup
+                legend={t.register.level}
+                columns={4}
+                options={LEVELS}
+                value={field.value ?? null}
+                onChange={field.onChange}
+                error={errors.level?.message}
+              />
             )}
           />
           {level && HIGH_SCHOOL_LEVELS.includes(level) ? (
@@ -164,7 +216,7 @@ export function RegisterPage() {
               />
             )}
           />
-          <p className="text-sm text-muted">{t.register.subjectsSoon}</p>
+          <p className="text-muted text-sm">{t.register.subjectsSoon}</p>
         </>
       ) : null}
 
@@ -178,7 +230,10 @@ export function RegisterPage() {
               <ChoiceGroup
                 legend={t.register.goal}
                 columns={1}
-                options={(Object.keys(t.register.goals) as Goal[]).map((g) => ({ value: g, ...t.register.goals[g] }))}
+                options={(Object.keys(t.register.goals) as Goal[]).map((g) => ({
+                  value: g,
+                  ...t.register.goals[g],
+                }))}
                 value={field.value}
                 onChange={field.onChange}
               />
@@ -205,9 +260,9 @@ export function RegisterPage() {
       </div>
 
       {step === 0 ? (
-        <p className="text-center text-sm text-muted">
+        <p className="text-muted text-center text-sm">
           {t.auth.hasAccount}{" "}
-          <Link to={paths.login} className="font-semibold text-primary underline-offset-4 hover:underline">
+          <Link to={paths.login} className="text-primary font-semibold underline-offset-4 hover:underline">
             {t.auth.login}
           </Link>
         </p>

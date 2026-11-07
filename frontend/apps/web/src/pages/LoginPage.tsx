@@ -37,7 +37,7 @@ export function LoginPage() {
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <header>
         <h1 className="text-2xl font-bold">{t.auth.loginTitle}</h1>
-        <p className="mt-1 text-muted">{t.auth.loginSubtitle}</p>
+        <p className="text-muted mt-1">{t.auth.loginSubtitle}</p>
       </header>
 
       {notice && !failure ? <Alert tone="info">{notice}</Alert> : null}
@@ -73,9 +73,9 @@ export function LoginPage() {
         {t.auth.login}
       </Button>
 
-      <p className="text-center text-sm text-muted">
+      <p className="text-muted text-center text-sm">
         {t.auth.noAccount}{" "}
-        <Link to={paths.register} className="font-semibold text-primary underline-offset-4 hover:underline">
+        <Link to={paths.register} className="text-primary font-semibold underline-offset-4 hover:underline">
           {t.auth.createAccount}
         </Link>
       </p>

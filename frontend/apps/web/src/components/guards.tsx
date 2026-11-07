@@ -5,7 +5,8 @@ import { paths } from "@/paths";
 export function RequireAuth() {
   const status = useSession();
   const location = useLocation();
-  if (status !== "authenticated") return <Navigate to={paths.login} replace state={{ from: location.pathname }} />;
+  if (status !== "authenticated")
+    return <Navigate to={paths.login} replace state={{ from: location.pathname }} />;
   return <Outlet />;
 }
 

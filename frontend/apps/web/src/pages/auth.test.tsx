@@ -3,7 +3,13 @@ import { json, mockApi, renderApp } from "@/test-utils";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const ME = { phone: "061234567", pseudo: "kiki", level: "Tle", serie: "C", date_joined: "2026-11-07T10:00:00Z" };
+const ME = {
+  phone: "061234567",
+  pseudo: "kiki",
+  level: "Tle",
+  serie: "C",
+  date_joined: "2026-11-07T10:00:00Z",
+};
 const PROGRESS = {
   summary: { exercises_done: 0, attempts_finished: 0, average_score: null, streak_days: 0 },
   subjects: [],
@@ -45,7 +51,10 @@ describe("connexion", () => {
     await userEvent.click(screen.getByRole("button", { name: "Se connecter" }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/progres"));
-    expect(calls.find((c) => c.path === "/api/auth/login/")?.body).toEqual({ phone: "061234567", password: "secret123" });
+    expect(calls.find((c) => c.path === "/api/auth/login/")?.body).toEqual({
+      phone: "061234567",
+      password: "secret123",
+    });
   });
 
   it("affiche un message clair si les identifiants sont refusés", async () => {

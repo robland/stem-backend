@@ -16,7 +16,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<ComponentPropsWit
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? t.auth.hidePassword : t.auth.showPassword}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex min-w-touch items-center justify-center rounded-r-lg text-muted hover:text-fg"
+          className="min-w-touch text-muted hover:text-fg absolute inset-y-0 right-0 flex items-center justify-center rounded-r-lg"
         >
           <Icon aria-hidden className="size-5" />
         </button>

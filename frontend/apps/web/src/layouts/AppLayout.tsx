@@ -22,8 +22,8 @@ const TABS: Tab[] = [
 export function AppLayout() {
   return (
     <div className="min-h-dvh lg:flex">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-2 border-r border-border bg-surface p-4 lg:flex">
-        <p className="mb-4 px-3 text-xl font-bold text-primary">{APP_NAME}</p>
+      <aside className="border-border bg-surface sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-2 border-r p-4 lg:flex">
+        <p className="text-primary mb-4 px-3 text-xl font-bold">{APP_NAME}</p>
         <nav aria-label={t.nav.main} className="flex flex-col gap-1">
           {TABS.map(({ to, label, icon: Icon, primary }) => (
             <NavLink
@@ -32,7 +32,7 @@ export function AppLayout() {
               end={to === paths.home}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-touch items-center gap-3 rounded-lg px-3 font-semibold transition-colors",
+                  "min-h-touch flex items-center gap-3 rounded-lg px-3 font-semibold transition-colors",
                   primary && !isActive && "bg-primary text-primary-fg hover:bg-primary/90",
                   !primary && !isActive && "text-muted hover:bg-surface-2 hover:text-fg",
                   isActive && "bg-primary-soft text-primary",
@@ -52,7 +52,7 @@ export function AppLayout() {
 
       <nav
         aria-label={t.nav.main}
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 pb-safe-b backdrop-blur lg:hidden"
+        className="border-border bg-surface/95 pb-safe-b fixed inset-x-0 bottom-0 z-20 border-t backdrop-blur lg:hidden"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {TABS.map(({ to, label, icon: Icon, primary }) => (
@@ -68,7 +68,7 @@ export function AppLayout() {
                 }
               >
                 {primary ? (
-                  <span className="-mt-6 flex size-14 items-center justify-center rounded-full bg-primary text-primary-fg shadow-lg ring-4 ring-bg">
+                  <span className="bg-primary text-primary-fg ring-bg -mt-6 flex size-14 items-center justify-center rounded-full shadow-lg ring-4">
                     <Icon aria-hidden className="size-6" />
                   </span>
                 ) : (
