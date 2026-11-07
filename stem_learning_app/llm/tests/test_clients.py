@@ -96,6 +96,16 @@ class TestOpenAIClient:
         with pytest.raises(LLMOutputInvalid):
             client.generate(task="extraction", prompt=PROMPT, output_schema=Answer)
 
+    def test_logs_schema_errors_without_values(self, client, sdk, caplog):
+        sdk.chat.completions.parse.side_effect = lambda **kw: Answer.model_validate_json('{"value": "secret-x"}')
+
+        with caplog.at_level("WARNING", logger="llm.clients.openai"), pytest.raises(LLMOutputInvalid):
+            client.generate(task="extraction", prompt=PROMPT, output_schema=Answer)
+
+        assert "hors schéma (1 erreur(s))" in caplog.text
+        assert "prompt=demo.v1 erreur_schema=value: Input should be a valid integer" in caplog.text
+        assert "secret-x" not in caplog.text
+
     def test_network_error(self, client, sdk):
         request = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
         sdk.chat.completions.parse.side_effect = openai.APITimeoutError(request=request)

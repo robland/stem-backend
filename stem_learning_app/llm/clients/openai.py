@@ -47,7 +47,10 @@ class OpenAIClient(LLMClient):
             raise LLMOutputInvalid(f"Réponse LLM tronquée ou filtrée ({prompt.id}).") from e
         except ValidationError as e:
             errors = summarize_validation_error(e)
-            self._log_failure(task, prompt, model, started, f"hors schéma ({len(errors)} erreur(s))")
+            self._log_failure(task, prompt, model, started, f"hors schéma ({e.error_count()} erreur(s))")
+            # Emplacement + message, jamais les valeurs reçues : de quoi ajuster le prompt sans contenu d'élève.
+            for line in errors:
+                logger.warning("llm task=%s prompt=%s erreur_schema=%s", task, prompt.id, line)
             raise LLMOutputInvalid(f"Réponse LLM hors schéma ({prompt.id}).", errors) from e
         except openai.OpenAIError as e:
             self._log_failure(task, prompt, model, started, type(e).__name__)
