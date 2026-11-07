@@ -2,6 +2,7 @@ import { useMe, useProgress } from "@stem/api-client";
 import { Button, Card, Spinner } from "@stem/ui";
 import { Camera, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ReviewList } from "@/components/ReviewList";
 import { paths } from "@/paths";
 import { t } from "@/strings/fr";
 
@@ -44,21 +45,7 @@ export function HomePage() {
         {progress.isSuccess && review.length === 0 ? (
           <p className="text-muted">{t.home.reviewEmpty}</p>
         ) : null}
-        <ul className="flex flex-col gap-2">
-          {review.map((item) => (
-            <li key={item.exercise.id}>
-              <Link
-                to={paths.exercise(item.exercise.id, { tentative: item.attempt ?? undefined })}
-                className="border-border bg-surface hover:bg-surface-2 min-h-touch flex items-center justify-between gap-3 rounded-xl border p-4"
-              >
-                <span className="font-semibold">{item.exercise.title}</span>
-                <span className="bg-surface-2 text-muted shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                  {item.reason === "to_finish" ? t.home.toFinish : t.home.toReview}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ReviewList items={review} />
       </section>
     </div>
   );

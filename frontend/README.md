@@ -163,7 +163,7 @@ frontend/
 ## 7. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner, lecteur de parcours et renderers des 13 types V1 (en ligne) ; 162 tests verts. Reste : hors-ligne, écran Progrès, Playwright.
+> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner, lecteur de parcours et renderers des 13 types V1 (en ligne), écran Progrès ; 174 tests verts. Reste : hors-ligne (PWA, IndexedDB, synchro), accueil définitif, Playwright.
 
 ### Lancer le frontend
 
@@ -212,7 +212,7 @@ Après un changement de dépendances : `docker compose run --rm --no-deps fronte
   - PC : `chem_balance` (coefficients + compteur d'atomes et de charges en direct), `chem_formula` (aperçu `\ce{}`), `unit_conversion` (texte envoyé tel quel, lu par l'API).
   - Analyseurs partagés dans `packages/activities/src/math/` : expressions (syntaxe §5.1, aperçu LaTeX, évaluation pour les courbes) et formules chimiques (atomes, charges, hydrates) — base de la future correction hors-ligne.
 - [ ] `packages/grading` (hors-ligne) + `packages/offline` (IndexedDB, file de synchro) + PWA.
-- [ ] Écran Progrès (maîtrise par chapitre, révision du jour).
+- [x] Écran Progrès — 2026-11-07 : chiffres clés (parcours terminés, score moyen, série de jours), révision du jour (partagée avec l'accueil, « à terminer » rouvre la tentative), score moyen par matière, points faibles (3 chapitres non maîtrisés les plus bas), maîtrise par chapitre avec filtre par matière et prochaine révision (« demain », « dans 3 jours », fuseau de Brazzaville), « Mes parcours » paginés par curseur. Jauges `Meter` d'une seule teinte avec la valeur écrite ; états de maîtrise avec icône + libellé (jamais la couleur seule). Tant que les chapitres du programme ne sont pas saisis côté backend, la maîtrise par chapitre reste vide (message explicatif).
 - [ ] Tests : Vitest + Testing Library (renderers, grading), Playwright (parcours scanner → résolution).
 
 ### Phase 2 — V2
