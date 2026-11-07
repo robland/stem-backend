@@ -9,8 +9,9 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 
-  /** Message global (`detail` / `non_field_errors`), sinon null. */
+  /** Message global (`detail` / `non_field_errors`, ou liste de messages DRF), sinon null. */
   get detail(): string | null {
+    if (Array.isArray(this.data)) return typeof this.data[0] === "string" ? this.data[0] : null;
     const data = this.data as Record<string, unknown> | null;
     const value = data?.detail ?? data?.non_field_errors;
     if (typeof value === "string") return value;
@@ -22,7 +23,7 @@ export class ApiError extends Error {
   get fieldErrors(): Record<string, string> {
     const out: Record<string, string> = {};
     const data = this.data;
-    if (!data || typeof data !== "object") return out;
+    if (!data || typeof data !== "object" || Array.isArray(data)) return out;
     for (const [key, value] of Object.entries(data)) {
       if (key === "detail" || key === "non_field_errors") continue;
       const message = Array.isArray(value) ? value[0] : value;

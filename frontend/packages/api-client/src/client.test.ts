@@ -40,7 +40,9 @@ describe("authFetch", () => {
     setAccessToken("expire");
     const calls = mockFetch((request) => {
       if (path(request) === "/api/auth/refresh/") return json(200, { access: "A2" });
-      return request.headers.get("Authorization") === "Bearer A2" ? json(200, { pseudo: "neo" }) : json(401, {});
+      return request.headers.get("Authorization") === "Bearer A2"
+        ? json(200, { pseudo: "neo" })
+        : json(401, {});
     });
 
     const me = await unwrap(getApi().PATCH("/api/me/", { body: { pseudo: "neo" } }));
@@ -104,6 +106,11 @@ describe("ApiError", () => {
   it("lit les erreurs DRF par champ", () => {
     const error = new ApiError(400, { phone: ["Numéro déjà utilisé."], pseudo: "Trop long" });
     expect(error.fieldErrors).toEqual({ phone: "Numéro déjà utilisé.", pseudo: "Trop long" });
+  });
+
+  it("lit une liste de messages DRF (ValidationError sur une chaîne)", () => {
+    expect(new ApiError(400, ["Matière non ouverte."]).detail).toBe("Matière non ouverte.");
+    expect(new ApiError(400, ["Matière non ouverte."]).fieldErrors).toEqual({});
   });
 
   it("parseRetryAfter accepte secondes et date HTTP", () => {

@@ -80,7 +80,8 @@ export function useSubjects() {
 export function useChapters(subject?: SubjectCode, level?: Level) {
   return useQuery({
     queryKey: queryKeys.chapters(subject, level),
-    queryFn: () => unwrap(getApi().GET("/api/curriculum/chapters/", { params: { query: { subject, level } } })),
+    queryFn: () =>
+      unwrap(getApi().GET("/api/curriculum/chapters/", { params: { query: { subject, level } } })),
     enabled: Boolean(subject),
     staleTime: 24 * 60 * 60_000,
   });

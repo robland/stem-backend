@@ -19,12 +19,15 @@ const download = (target) =>
       let body = "";
       res.setEncoding("utf8");
       res.on("data", (chunk) => (body += chunk));
-      res.on("end", () => (res.statusCode === 200 ? ok(body) : fail(new Error(`${target} : HTTP ${res.statusCode}`))));
+      res.on("end", () =>
+        res.statusCode === 200 ? ok(body) : fail(new Error(`${target} : HTTP ${res.statusCode}`)),
+      );
     }).on("error", fail);
   });
 
 const ast = await openapiTS(await download(url));
-const header = "// Fichier généré par scripts/generate.mjs depuis /api/schema/ — ne pas modifier (`pnpm api:generate`).\n";
+const header =
+  "// Fichier généré par scripts/generate.mjs depuis /api/schema/ — ne pas modifier (`pnpm api:generate`).\n";
 const options = await prettier.resolveConfig(TARGET);
 const output = await prettier.format(header + astToString(ast), { ...options, filepath: TARGET });
 mkdirSync(dirname(TARGET), { recursive: true });
