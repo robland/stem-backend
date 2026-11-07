@@ -65,7 +65,7 @@ class TestCreateUpload:
             (0, "maths", "3e"),
             (1, "physique_chimie", user.level),  # niveau absent → niveau de l'élève
         ]
-        assert Upload.objects.get().prompt_id == "extraction.v1"
+        assert Upload.objects.get().prompt_id == "extraction.v2"
 
     def test_pdf_pages_are_sent_to_llm(self, send, fake_llm):
         response = send(extraction_response(extracted()), data=pdf_bytes(pages=2))

@@ -5,6 +5,7 @@ from curriculum.choices import COLLEGE_LEVELS, Level, SubjectCode
 from .clients import get_client
 from .exceptions import LLMOutputInvalid
 from .prompts import latest_prompt
+from .statement import count_questions
 from .schemas import ExtractionOutput, GeneratedExercise
 
 
@@ -13,17 +14,28 @@ def extract_exercises(images, *, declared_level=""):
     if not images:
         raise ValueError("Au moins une image est requise.")
 
-    prompt = latest_prompt("extraction").render(
-        subjects=", ".join(f"{code} ({label})" for code, label in SubjectCode.choices),
-        levels=", ".join(Level.values),
-        declared_level=Level(declared_level).label if declared_level else "non précisé",
-    )
-    return get_client().generate(
-        task="extraction",
-        prompt=prompt,
-        output_schema=ExtractionOutput,
-        images=images,
-    )
+    context = {
+        "subjects": ", ".join(f"{code} ({label})" for code, label in SubjectCode.choices),
+        "levels": ", ".join(Level.values),
+        "declared_level": Level(declared_level).label if declared_level else "non précisé",
+    }
+    prompt = latest_prompt("extraction")
+
+    def extract(correction):
+        return get_client().generate(
+            task="extraction",
+            prompt=prompt.render(**context, correction=correction),
+            output_schema=ExtractionOutput,
+            images=images,
+        )
+
+    # Comme pour la génération : une réponse hors schéma est relancée une fois avec ses erreurs.
+    try:
+        return extract("")
+    except LLMOutputInvalid as e:
+        if not e.errors:
+            raise
+        return extract(_correction_text(e.errors))
 
 
 def exam_for(level):
@@ -43,7 +55,11 @@ def generate_exercise(*, statement, subject, level, chapter="", corrections=()):
         "exam": exam_for(level),
         "chapter": chapter or "non précisé",
         "statement": statement,
+        # Valeurs littérales : « {{1}} » dans le gabarit serait pris pour une variable.
         "blank_example": "{{1}}, {{2}}",
+        "blank_one": "{{1}}",
+        "blank_two": "{{2}}",
+        "structure": _structure_text(statement),
     }
     prompt = latest_prompt("generation")
     try:
@@ -52,6 +68,16 @@ def generate_exercise(*, statement, subject, level, chapter="", corrections=()):
         if not e.errors:
             raise
         return _generate(prompt.render(**context, correction=_correction_text(e.errors)))
+
+
+def _structure_text(statement):
+    questions = count_questions(statement)
+    if not questions:
+        return ""
+    return (
+        f"\nCet énoncé comporte {questions} questions numérotées : le parcours doit avoir au moins "
+        f"{questions} étapes, au moins une par question, dans l'ordre.\n"
+    )
 
 
 def _correction_text(errors):

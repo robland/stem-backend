@@ -4,7 +4,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict
 
 from curriculum.choices import Level, SubjectCode
 
-from .rich_text import RichText, max_length
+from .rich_text import RichText, math_delimited, max_length
 
 MAX_EXERCISES_PER_UPLOAD = 20
 
@@ -24,7 +24,8 @@ def _max_exercises(value):
     return value
 
 
-# Partagé avec l'API (correction de l'énoncé par l'élève) : mêmes règles que pour le LLM.
+# Partagé avec l'API (correction de l'énoncé par l'élève). La sortie du LLM y ajoute
+# `math_delimited` : aucune notation mathématique hors de $...$ / \ce{...}.
 ExerciseStatement = Annotated[RichText, AfterValidator(_not_empty), max_length(5000)]
 
 
@@ -32,7 +33,7 @@ ExerciseStatement = Annotated[RichText, AfterValidator(_not_empty), max_length(5
 class ExtractedExerciseOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    statement: ExerciseStatement
+    statement: Annotated[ExerciseStatement, math_delimited]
     subject: SubjectCodeLiteral | None
     level: LevelLiteral | None
     chapter_hint: Annotated[str, max_length(200)] | None

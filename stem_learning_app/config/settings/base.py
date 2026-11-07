@@ -44,7 +44,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 LLM_CLIENT = os.environ.get("LLM_CLIENT", "llm.clients.openai.OpenAIClient")
 LLM_MODELS = {
     "extraction": os.environ.get("LLM_MODEL_EXTRACTION", "gpt-4.1-mini"),
-    "generation": os.environ.get("LLM_MODEL_GENERATION", "gpt-4.1-mini"),
+    "generation": os.environ.get("LLM_MODEL_GENERATION", "gpt-4.1"),
 }
 LLM_TIMEOUT_SECONDS = int(os.environ.get("LLM_TIMEOUT_SECONDS", "90"))
 LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "2"))

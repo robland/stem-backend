@@ -72,7 +72,9 @@ def test_committed_json_schema_is_up_to_date():
         ("mcq", {"options": [{"id": "a", "content": "1"}, {"id": "a", "content": "2"}]}, "double"),
         ("short_answer", {"answer.value": None}, "numérique"),
         ("short_answer", {"grading": "normalized_text"}, "au moins une réponse"),
-        ("fill_blanks", {"text": "Sans trou."}, "au moins un trou"),
+        ("fill_blanks", {"text": "Sans trou."}, "aucun trou"),
+        ("fill_blanks", {"text": "{{1}} puis {{1}}", "answer.blanks": [{"id": "1", "accepted": ["2"]}]},
+         "numéro différent"),
         ("fill_blanks", {"answer.blanks": [{"id": "1", "accepted": ["2"]}]}, "exactement les trous"),
         ("matching", {"answer.pairs": [{"left_id": "l1", "right_id": "r1"}]}, "exactement une fois"),
         ("matching", {"answer.pairs": [{"left_id": "l1", "right_id": "r1"}, {"left_id": "l2", "right_id": "r9"}]},
@@ -124,3 +126,40 @@ def test_duplicate_step_ids_are_rejected():
 def test_unknown_activity_type_is_rejected():
     with pytest.raises(ValidationError):
         validate(generated_exercise(step() | {"activity": {"type": "dessin", "prompt": "x"}}))
+
+
+def test_fill_blanks_tolerates_spaces_inside_braces():
+    exercise = validate(with_activity("fill_blanks", text="Abscisse {{ 1 }} et ordonnée {{2 }}."))
+
+    assert exercise.steps[0].activity.text == "Abscisse {{1}} et ordonnée {{2}}."
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Calcule f(x) = x² - 4x.", "Le méthane CH₄ brûle.", "Développe (2x + 3)².", "Calcule f(x) = x^2 - 4x.", "Résoudre dans \\mathbb{R}.", "Le méthane CH_4 brûle.", "Calcule \\frac{1}{2}."],
+)
+def test_math_outside_dollars_is_rejected_in_llm_output(text):
+    with pytest.raises(ValidationError, match="hors de"):
+        validate(generated_exercise(step() | {"objective": text}))
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Calcule $f(x) = x^2 - 4x$ dans $\\mathbb{R}$.",
+        "Équilibre \\ce{CH4 + 2O2 -> CO2 + 2H2O}.",
+        "Le sulfate \\ce{SO4^{2-}} et $$\\frac{1}{2}$$.",
+        "Une vitesse de 72 km/h, un volume de 2,5 cm³, une aire de 3 m².",
+    ],
+)
+def test_delimited_math_is_accepted(text):
+    validate(generated_exercise(step() | {"objective": text}))
+
+
+def test_stored_statement_stays_lenient():
+    """L'énoncé stocké est celui validé par l'élève, qui peut taper « x^2 » sans $...$."""
+    content = ExerciseContent.model_validate(
+        generated_exercise() | {"schema_version": "1.0", "statement": "Résoudre x^2 = 4."}
+    )
+
+    assert content.statement == "Résoudre x^2 = 4."

@@ -52,7 +52,7 @@ class TestRequestGeneration:
         exercise = Exercise.objects.get()
         assert exercise.generation_status == Exercise.GenerationStatus.READY
         assert (exercise.owner, exercise.source, exercise.level, exercise.prompt_id) == (
-            user, extracted, "3e", "generation.v1"
+            user, extracted, "3e", "generation.v2"
         )
         assert exercise.title == "Variations d'une fonction du second degré"
         assert exercise.content["statement"] == STATEMENT
@@ -227,3 +227,15 @@ class TestVerification:
 
         assert Exercise.objects.get().generation_status == Exercise.GenerationStatus.NEEDS_REVIEW
         assert len(fake_llm.calls) == 1
+
+
+class TestCoverageRegeneration:
+    def test_too_few_steps_triggers_regeneration(self, generate, user, fake_llm):
+        statement = "Exercice 1\n1) Calculer $f(0)$.\n2) Calculer $f(2)$."
+        generate(make_extracted(user, statement=statement), generated_exercise(step("s1")),
+                 generated_exercise(step("s1"), step("s2", "mcq")))
+
+        exercise = Exercise.objects.get()
+        assert exercise.generation_status == Exercise.GenerationStatus.READY
+        assert len(exercise.content["steps"]) == 2
+        assert "1 étape(s) pour 2 questions" in fake_llm.calls[1]["prompt"].user

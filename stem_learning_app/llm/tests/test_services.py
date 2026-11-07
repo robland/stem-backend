@@ -32,7 +32,7 @@ def test_extract_exercises(fake_llm):
 
     result = extract_exercises([IMAGE], declared_level="Tle")
 
-    assert result.prompt_id == "extraction.v1"
+    assert result.prompt_id == "extraction.v2"
     assert [e.subject for e in result.output.exercises] == ["maths", "physique_chimie"]
 
     call = fake_llm.calls[0]
@@ -60,10 +60,35 @@ def test_extract_exercises_requires_images(fake_llm):
 
 
 def test_extract_exercises_rejects_html_output(fake_llm):
-    fake_llm.queue({"is_exercise_document": True, "exercises": [RESPONSE["exercises"][0] | {"statement": "<p>x</p>"}]})
+    html = {"is_exercise_document": True, "exercises": [RESPONSE["exercises"][0] | {"statement": "<p>x</p>"}]}
+    fake_llm.queue(html, html)
 
     with pytest.raises(LLMOutputInvalid):
         extract_exercises([IMAGE])
+    assert len(fake_llm.calls) == 2
+
+
+def test_extract_exercises_retries_with_errors(fake_llm):
+    undelimited = {"is_exercise_document": True, "exercises": [RESPONSE["exercises"][0] | {"statement": "f(x) = x^2"}]}
+    fake_llm.queue(undelimited, RESPONSE)
+
+    result = extract_exercises([IMAGE])
+
+    assert len(result.output.exercises) == 2
+    retry = fake_llm.calls[1]["prompt"].user
+    assert "Ta réponse précédente était invalide" in retry
+    assert "hors de $...$" in retry
+    assert "invalide" not in fake_llm.calls[0]["prompt"].user
+
+
+def test_extraction_prompt_gives_priority_to_document_level(fake_llm):
+    fake_llm.queue(RESPONSE)
+
+    extract_exercises([IMAGE], declared_level="3e")
+
+    system = fake_llm.calls[0]["prompt"].system
+    assert "prime sur le niveau déclaré" in system
+    assert "$\\mathbb{R}$" in system and "\\ce{CH4}" in system
 
 
 class TestGenerateExercise:
@@ -78,11 +103,13 @@ class TestGenerateExercise:
 
         result = self.generate()
 
-        assert result.prompt_id == "generation.v1"
+        assert result.prompt_id == "generation.v2"
         prompt = fake_llm.calls[0]["prompt"]
         assert fake_llm.calls[0]["task"] == "generation"
         assert "élève de 3e qui prépare le BEPC" in prompt.system
-        assert "trous notés {{1}}, {{2}}" in prompt.system
+        assert "sous la forme {{1}}, {{2}}" in prompt.system
+        assert "$f(0) =$ {{1}} et $f(2) =$ {{2}}" in prompt.system
+        assert "au moins une étape par question" in prompt.system
         assert "Chapitre : Fonctions" in prompt.user
         assert "$f(x) = x^2 - 4x + 3$" in prompt.user
         assert "invalide" not in prompt.user
@@ -115,3 +142,22 @@ class TestGenerateExercise:
 
     def test_lycee_targets_bac(self):
         assert (exam_for("3e"), exam_for("Tle")) == ("BEPC", "BAC")
+
+
+def test_generation_prompt_states_the_number_of_questions(fake_llm):
+    fake_llm.queue(generated_exercise())
+
+    generate_exercise(
+        statement="Exercice 1\n1) Calculer $f(0)$.\n2) Factoriser.\n3) Résoudre.", subject="maths", level="3e",
+    )
+
+    user_prompt = fake_llm.calls[0]["prompt"].user
+    assert "comporte 3 questions numérotées : le parcours doit avoir au moins 3 étapes" in user_prompt
+
+
+def test_generation_prompt_without_numbered_questions(fake_llm):
+    fake_llm.queue(generated_exercise())
+
+    generate_exercise(statement="Résoudre $x^2 = 4$.", subject="maths", level="3e")
+
+    assert "questions numérotées" not in fake_llm.calls[0]["prompt"].user

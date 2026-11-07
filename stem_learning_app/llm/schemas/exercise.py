@@ -11,7 +11,7 @@ from typing import Annotated, Literal, Union
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
-from .rich_text import RichText, max_length
+from .rich_text import LLMRichText, RichText, max_length
 
 SCHEMA_VERSION = "1.0"
 
@@ -22,6 +22,7 @@ Expression = Annotated[str, max_length(200)]
 Formula = Annotated[str, max_length(100)]
 
 FILL_BLANK_RE = re.compile(r"\{\{(\w+)\}\}")
+LOOSE_BLANK_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 PLACEHOLDER = r"\placeholder{}"
 
 
@@ -47,7 +48,7 @@ class Strict(BaseModel):
 
 class Item(Strict):
     id: Id
-    content: RichText
+    content: LLMRichText
 
 
 # --- Activités ------------------------------------------------------------------
@@ -59,7 +60,7 @@ class McqAnswer(Strict):
 class McqActivity(Strict):
     type: Literal["mcq"]
     grading: Literal["exact"]
-    prompt: RichText
+    prompt: LLMRichText
     options: Annotated[list[Item], count_between(2, 6)]
     multiple: bool
     answer: McqAnswer
@@ -82,7 +83,7 @@ class TrueFalseAnswer(Strict):
 class TrueFalseActivity(Strict):
     type: Literal["true_false"]
     grading: Literal["exact"]
-    prompt: RichText
+    prompt: LLMRichText
     answer: TrueFalseAnswer
 
 
@@ -97,7 +98,7 @@ class ShortAnswerAnswer(Strict):
 class ShortAnswerActivity(Strict):
     type: Literal["short_answer"]
     grading: Literal["normalized_text", "numeric"]
-    prompt: RichText
+    prompt: LLMRichText
     answer: ShortAnswerAnswer
 
     @model_validator(mode="after")
@@ -122,16 +123,22 @@ class FillBlanksAnswer(Strict):
 class FillBlanksActivity(Strict):
     type: Literal["fill_blanks"]
     grading: Literal["normalized_text"]
-    prompt: RichText
-    # Texte à trous : chaque trou est noté {{id}}.
-    text: RichText
+    prompt: LLMRichText
+    # Texte à trous : chaque trou est noté {{1}}, {{2}}… (espaces internes tolérés puis retirés).
+    text: LLMRichText
     answer: FillBlanksAnswer
 
     @model_validator(mode="after")
     def check_answer(self):
+        self.text = LOOSE_BLANK_RE.sub(r"{{\1}}", self.text)
         placeholders = FILL_BLANK_RE.findall(self.text)
-        if not placeholders or len(placeholders) != len(set(placeholders)):
-            raise ValueError("text doit contenir au moins un trou {{id}}, chacun une seule fois.")
+        if not placeholders:
+            raise ValueError(
+                "text ne contient aucun trou : noter chaque trou {{1}}, {{2}}… directement dans text "
+                "(ex. « f(0) = {{1}} et f(2) = {{2}} »)."
+            )
+        if len(placeholders) != len(set(placeholders)):
+            raise ValueError("Chaque trou de text doit avoir un numéro différent ({{1}}, {{2}}…).")
         if set(placeholders) != unique_ids(self.answer.blanks, "trous"):
             raise ValueError("answer.blanks doit couvrir exactement les trous de text.")
         if any(not blank.accepted for blank in self.answer.blanks):
@@ -151,7 +158,7 @@ class MatchingAnswer(Strict):
 class MatchingActivity(Strict):
     type: Literal["matching"]
     grading: Literal["exact"]
-    prompt: RichText
+    prompt: LLMRichText
     left: Annotated[list[Item], count_between(2, 8)]
     right: Annotated[list[Item], count_between(2, 8)]
     answer: MatchingAnswer
@@ -177,7 +184,7 @@ class OrderingAnswer(Strict):
 class OrderingActivity(Strict):
     type: Literal["ordering"]
     grading: Literal["exact"]
-    prompt: RichText
+    prompt: LLMRichText
     # Le client mélange les éléments à l'affichage.
     items: Annotated[list[Item], count_between(2, 8)]
     answer: OrderingAnswer
@@ -199,7 +206,7 @@ class FormulaInputActivity(Strict):
     type: Literal["formula_input"]
     grading: Literal["symbolic"]
     # Contient exactement un \placeholder{} : la zone que l'élève complète.
-    prompt: RichText
+    prompt: LLMRichText
     answer: FormulaAnswer
 
     @model_validator(mode="after")
@@ -235,7 +242,7 @@ class GraphPointsAnswer(Strict):
 class GraphPointsActivity(Strict):
     type: Literal["graph_points"]
     grading: Literal["numeric"]
-    prompt: RichText
+    prompt: LLMRichText
     axes: Axes
     # Abscisses des points que l'élève place ; la courbe s'anime au fur et à mesure.
     points_to_place: Annotated[list[float], count_between(1, 8)]
@@ -277,7 +284,7 @@ class GraphParametersAnswer(Strict):
 class GraphParametersActivity(Strict):
     type: Literal["graph_parameters"]
     grading: Literal["numeric"]
-    prompt: RichText
+    prompt: LLMRichText
     axes: Axes
     # Expression en x et en paramètres (ex. « a*x + b ») réglés par curseurs.
     function: Expression
@@ -305,8 +312,8 @@ class VariationTableAnswer(Strict):
 class VariationTableActivity(Strict):
     type: Literal["variation_table"]
     grading: Literal["exact"]
-    prompt: RichText
-    x_values: Annotated[list[RichText], count_between(2, 6)]
+    prompt: LLMRichText
+    x_values: Annotated[list[LLMRichText], count_between(2, 6)]
     answer: VariationTableAnswer
 
     @model_validator(mode="after")
@@ -327,7 +334,7 @@ class ChemBalanceAnswer(Strict):
 class ChemBalanceActivity(Strict):
     type: Literal["chem_balance"]
     grading: Literal["chem_balance"]
-    prompt: RichText
+    prompt: LLMRichText
     # Formules brutes sans coefficient, ex. « H2 », « O2 », « Fe2O3 ».
     reactants: Annotated[list[Formula], count_between(1, 5)]
     products: Annotated[list[Formula], count_between(1, 5)]
@@ -349,7 +356,7 @@ class ChemFormulaAnswer(Strict):
 class ChemFormulaActivity(Strict):
     type: Literal["chem_formula"]
     grading: Literal["exact"]
-    prompt: RichText
+    prompt: LLMRichText
     answer: ChemFormulaAnswer
 
 
@@ -360,7 +367,7 @@ class UnitConversionAnswer(Strict):
 class UnitConversionActivity(Strict):
     type: Literal["unit_conversion"]
     grading: Literal["numeric"]
-    prompt: RichText
+    prompt: LLMRichText
     value: float
     from_unit: ShortText
     to_unit: ShortText
@@ -405,35 +412,35 @@ def _strict_union_schema(schema):
 
 class CommonMistake(Strict):
     pattern: ShortText
-    feedback: RichText
+    feedback: LLMRichText
 
 
 class Step(Strict):
     model_config = ConfigDict(extra="forbid", json_schema_extra=_strict_union_schema)
 
     id: Annotated[str, Field(pattern=r"^s[0-9]{1,2}$")]
-    objective: RichText
+    objective: LLMRichText
     skill: Annotated[str, Field(pattern=r"^[a-z0-9_]{1,60}$")]
     activity: Activity
     # Trois niveaux : relance, méthode, quasi-solution.
-    hints: Annotated[list[RichText], count_between(3, 3)]
+    hints: Annotated[list[LLMRichText], count_between(3, 3)]
     common_mistakes: Annotated[list[CommonMistake], count_between(0, 5)]
-    explanation: RichText
+    explanation: LLMRichText
 
 
 class Intuition(Strict):
-    mental_image: RichText
-    example: RichText
+    mental_image: LLMRichText
+    example: LLMRichText
 
 
 class Recall(Strict):
     kind: Literal["formula", "definition", "property", "method"]
-    content: RichText
-    explanation: RichText
+    content: LLMRichText
+    explanation: LLMRichText
 
 
 class Summary(Strict):
-    key_takeaway: RichText
+    key_takeaway: LLMRichText
 
 
 class GeneratedExercise(Strict):

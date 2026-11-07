@@ -63,7 +63,7 @@ Django 5.2 + DRF  ──►  PostgreSQL
 - **PostgreSQL** (SQLite toléré en dev uniquement).
 - **Pydantic v2** pour valider le contenu généré par le LLM (schéma §6).
 - **SymPy** pour l'équivalence symbolique et la vérification des solutions mathématiques.
-- LLM : OpenAI (actuellement `gpt-4.1-mini`) **derrière une couche d'abstraction** `llm/` (provider interchangeable, modèle configurable par tâche via settings).
+- LLM : OpenAI (actuellement `gpt-4.1-mini` pour l'extraction, `gpt-4.1` pour la génération) **derrière une couche d'abstraction** `llm/` (provider interchangeable, modèle configurable par tâche via settings).
 - Gestion de l'environnement et des dépendances : **uv** (`pyproject.toml` + `uv.lock` versionné ; `uv add` / `uv lock`, jamais de lock régénéré pendant un build).
 - **Docker** : `Dockerfile` multi-étapes (`dev` pour Compose/tests, `prod` par défaut : non root, gunicorn, WhiteNoise pour les statiques) ; `docker-compose.yml` = web + worker + PostgreSQL + Redis.
 - Settings : `config/settings/{base,dev,prod,test}.py`. `prod` refuse de démarrer sans `SECRET_KEY`, `ALLOWED_HOSTS`, `DATABASE_URL`.
@@ -320,6 +320,23 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
   - sans beat (cron d'hébergeur) : `python manage.py run_maintenance` (bloc `cron` commenté dans `render.yaml`).
 - [x] `Mastery` + révision espacée + « révision du jour » + endpoint `progress` (§5.3) — 2026-11-06.
 - [x] Reset des migrations (décision du porteur du projet : aucune donnée à conserver) ; `cot_for_stem` supprimée — 2026-11-06.
+
+### Essai réel des prompts (2026-11-07)
+
+Fiche de maths 3e photographiée (en-tête avec nom et établissement) + PDF de PC 2nde de 2 pages ; 4 exercices. Documents de synthèse : **l'écriture manuscrite reste à tester sur de vraies photos.**
+
+| | `gpt-4.1-mini` | `gpt-4.1` (génération seule) |
+|---|---|---|
+| Extraction `extraction.v2` | ✅ 4/4 exercices, ordre, matière, niveau (2nde lu dans l'en-tête), aucune donnée personnelle, formules en `$…$` (après 1 relance sur la photo) | — |
+| Génération `generation.v2` | ❌ 1/4 parcours valide (formules hors `$…$`, tableau de variations faux, `fill_blanks` sans trou) | ✅ 3/4 produits : 2 `ready`, 1 `needs_review` (erreur typique équivalente à la réponse) ; 1 échec (tableau de variations faux) |
+| Coût estimé (tarifs publics, relances comprises) | ≈ 0,005 $ par parcours | ≈ 0,03 $ par parcours |
+
+Corrections issues de l'essai : `extraction.v2` / `generation.v2` (exemples de texte riche, niveau de l'en-tête, nombre de questions annoncé au modèle, trous hors `$…$`), `LLMRichText` (sortie LLM : aucune commande LaTeX, `^`, `_`, exposant ou indice Unicode hors `$…$` / `\ce{}`, unités `m²`/`cm³` permises), relance corrective de l'extraction, contrôle de couverture (≥ 1 étape par question numérotée), journalisation des échecs d'appel.
+
+À décider / à faire :
+- [x] **Modèle de génération** : `gpt-4.1` retenu (nettement plus fiable, ≈ 6× plus cher ; le cache entre élèves amortit les sujets récurrents). Réglable par `LLM_MODEL_GENERATION`.
+- [ ] Forme attendue des réponses : « développer et réduire » est aujourd'hui corrigé par équivalence symbolique, donc une forme non réduite est acceptée. Ajouter une contrainte de forme (`answer.form` : développée, factorisée, réduite) au contrat §6 (bump `schema_version`).
+- [ ] Rejouer l'essai sur de vraies photos (manuscrit, mauvais éclairage) avant la mise en production.
 
 ### Phase 2 — V2
 - [ ] App `challenges` : défis publics (catalogue matière/chapitre/niveau) et privés (code/lien), chrono, indices on/off, notation, points auteur.

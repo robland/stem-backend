@@ -120,23 +120,13 @@ def run_generation(exercise_id):
         return _fail(exercise, ERROR_LLM)
 
     chapter = exercise.chapter.name if exercise.chapter else (exercise.source.chapter_hint or "")
-    issues = []
-    for _ in range(settings.GENERATION_ATTEMPTS):
-        try:
-            result = generate_exercise(
-                statement=statement, subject=exercise.subject.code, level=exercise.level, chapter=chapter,
-                corrections=issues,
-            )
-        except LLMRefusal:
-            return _fail(exercise, ERROR_REFUSED)
-        except LLMError:
-            logger.exception("Génération en échec pour le parcours %s", exercise.id)
-            return _fail(exercise, ERROR_LLM)
-        content = build_content(result.output, statement)
-        # Justesse des réponses attendues (SymPy, chimie, unités) ; régénération ciblée sinon.
-        issues = verify_exercise(content)
-        if not issues:
-            break
+    try:
+        result, content, issues = generate_and_verify(statement, exercise.subject.code, exercise.level, chapter)
+    except LLMRefusal:
+        return _fail(exercise, ERROR_REFUSED)
+    except LLMError:
+        logger.exception("Génération en échec pour le parcours %s", exercise.id)
+        return _fail(exercise, ERROR_LLM)
 
     exercise.title = content.title
     exercise.content = content.model_dump(mode="json")
@@ -150,6 +140,23 @@ def run_generation(exercise_id):
     else:
         exercise.generation_status = Exercise.GenerationStatus.READY
     exercise.save()
+
+
+def generate_and_verify(statement, subject_code, level, chapter=""):
+    """Génère puis revérifie (justesse, couverture des questions) ; régénération ciblée si besoin.
+
+    Renvoie (LLMResult, ExerciseContent, problèmes restants). Lève LLMError.
+    """
+    issues = []
+    for _ in range(settings.GENERATION_ATTEMPTS):
+        result = generate_exercise(
+            statement=statement, subject=subject_code, level=level, chapter=chapter, corrections=issues,
+        )
+        content = build_content(result.output, statement)
+        issues = verify_exercise(content)
+        if not issues:
+            break
+    return result, content, issues
 
 
 def build_content(generated, statement):

@@ -10,6 +10,8 @@ import re
 
 from sympy import Symbol, diff, oo
 
+from llm.statement import count_questions
+
 from .chemistry import FormulaError, balance_report, is_simplest, parse_formula
 from .symbolic import ExpressionError, equivalent, evaluate, parse
 from .units import UnitError, convert
@@ -19,12 +21,24 @@ INFINITY_RE = re.compile(r"^([+-]?)(\\infty|∞|inf)$")
 
 def verify_exercise(exercise):
     """`exercise` : GeneratedExercise ou ExerciseContent. Renvoie la liste des problèmes détectés."""
-    issues = []
+    issues = _coverage(exercise)
     for index, step in enumerate(exercise.steps):
         checker = CHECKERS.get(step.activity.type)
         if checker:
             issues += [f"steps.{index}.activity ({step.activity.type}) : {issue}" for issue in checker(step)]
     return issues
+
+
+def _coverage(exercise):
+    """Au moins une étape par question numérotée de l'énoncé (contenu stocké uniquement)."""
+    statement = getattr(exercise, "statement", "")
+    questions = count_questions(statement)
+    if questions and len(exercise.steps) < questions:
+        return [
+            f"le parcours n'a que {len(exercise.steps)} étape(s) pour {questions} questions dans l'énoncé : "
+            "au moins une étape par question, dans l'ordre"
+        ]
+    return []
 
 
 def _formula_input(step):

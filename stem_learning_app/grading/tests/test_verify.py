@@ -3,7 +3,7 @@ import copy
 import pytest
 
 from grading.verify import verify_exercise
-from llm.schemas import GeneratedExercise
+from llm.schemas import ExerciseContent, GeneratedExercise
 from llm.tests.factories import ACTIVITIES, generated_exercise, step
 
 
@@ -76,3 +76,28 @@ def test_does_not_modify_content():
     verify_exercise(content)
 
     assert content.model_dump() == before
+
+
+class TestCoverage:
+    def content(self, statement, steps):
+        return ExerciseContent.model_validate(
+            generated_exercise(*steps) | {"schema_version": "1.0", "statement": statement}
+        )
+
+    def test_one_step_per_question_is_required(self):
+        statement = "Exercice 1\n1) Calculer $f(0)$.\n2) Factoriser $f(x)$.\n3) Résoudre $f(x) = 0$."
+
+        [issue] = verify_exercise(self.content(statement, [step("s1"), step("s2")]))
+
+        assert "2 étape(s) pour 3 questions" in issue
+
+    def test_enough_steps(self):
+        statement = "a) Calculer $f(0)$.\nb) Calculer $f(2)$."
+
+        assert verify_exercise(self.content(statement, [step("s1"), step("s2")])) == []
+
+    def test_statement_without_numbered_questions(self):
+        assert verify_exercise(self.content("Résoudre $x^2 = 4$ dans $\\mathbb{R}$.", [step("s1")])) == []
+
+    def test_generated_exercise_without_statement_is_not_checked(self):
+        assert verify_exercise(GeneratedExercise.model_validate(generated_exercise(step("s1")))) == []

@@ -43,12 +43,14 @@ class OpenAIClient(LLMClient):
                 temperature=0,
             )
         except (openai.LengthFinishReasonError, openai.ContentFilterFinishReasonError) as e:
+            self._log_failure(task, prompt, model, started, type(e).__name__)
             raise LLMOutputInvalid(f"Réponse LLM tronquée ou filtrée ({prompt.id}).") from e
         except ValidationError as e:
-            raise LLMOutputInvalid(
-                f"Réponse LLM hors schéma ({prompt.id}).", summarize_validation_error(e)
-            ) from e
+            errors = summarize_validation_error(e)
+            self._log_failure(task, prompt, model, started, f"hors schéma ({len(errors)} erreur(s))")
+            raise LLMOutputInvalid(f"Réponse LLM hors schéma ({prompt.id}).", errors) from e
         except openai.OpenAIError as e:
+            self._log_failure(task, prompt, model, started, type(e).__name__)
             raise LLMError(f"Appel LLM en échec ({prompt.id}) : {type(e).__name__}") from e
 
         message = completion.choices[0].message
@@ -72,3 +74,10 @@ class OpenAIClient(LLMClient):
             result.input_tokens, result.output_tokens, time.monotonic() - started,
         )
         return result
+
+    @staticmethod
+    def _log_failure(task, prompt, model, started, reason):
+        logger.warning(
+            "llm task=%s prompt=%s model=%s échec=%s duration=%.1fs",
+            task, prompt.id, model, reason, time.monotonic() - started,
+        )
