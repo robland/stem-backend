@@ -2,90 +2,1150 @@ openapi: 3.0.3
 info:
   title: STEM API
   version: 1.0.0
-  description: Provide an App to add young student to understand STEM with chain of
-    thoughts methodology.
+  description: Apprentissage guidé étape par étape (chain of thought) pour collégiens
+    et lycéens.
 paths:
-  /api/stem/exercise/:
+  /api/attempts/{id}/:
     get:
-      operationId: stem_exercise_retrieve
-      description: |-
-        Reçoit un fichier (déjà uploadé sur S3 ou autre)
-        et déclenche l’analyse pédagogique.
-      tags:
-      - stem
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
-  /api/stem/qcm/{id}/:
-    get:
-      operationId: stem_qcm_retrieve
+      operationId: attempts_retrieve
       parameters:
       - in: path
         name: id
         schema:
           type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) attempt.
         required: true
       tags:
-      - stem
+      - attempts
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
-  /api/stem/step/{id}/:
-    get:
-      operationId: stem_step_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - stem
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
-  /api/stem/upload/document/:
-    post:
-      operationId: stem_upload_document_create
-      tags:
-      - stem
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UploadDocument'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UploadDocument'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UploadDocument'
-        required: true
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+      - jwtAuth: []
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UploadDocument'
+                $ref: '#/components/schemas/Attempt'
           description: ''
+  /api/attempts/{id}/answers/:
+    post:
+      operationId: attempts_answers_create
+      summary: Envoyer la réponse à l'étape en cours
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) attempt.
+        required: true
+      tags:
+      - attempts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResult'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResult'
+          description: Réponse déjà reçue (même client_uuid).
+        '400':
+          description: Réponse mal formée, étape non en cours, tentative terminée.
+  /api/attempts/{id}/hints/:
+    post:
+      operationId: attempts_hints_create
+      description: Chaque indice consulté réduit le score de l'étape (README §5.2).
+      summary: Obtenir l'indice suivant de l'étape en cours
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) attempt.
+        required: true
+      tags:
+      - attempts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hint'
+          description: ''
+        '400':
+          description: Étape non en cours ou indices épuisés.
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Renvoie l'access token ; le refresh token est posé en cookie httpOnly.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+          description: ''
+        '401':
+          description: Identifiants invalides.
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Invalide le refresh token (body ou cookie) et supprime le cookie.
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Accepte le refresh token dans le body (mobile) ou dans le cookie (web).
+        Le nouveau refresh token (rotation) est renvoyé par le même canal.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+          description: ''
+        '401':
+          description: Refresh absent, expiré ou invalidé.
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /api/curriculum/chapters/:
+    get:
+      operationId: curriculum_chapters_list
+      parameters:
+      - in: query
+        name: level
+        schema:
+          type: string
+          enum:
+          - 1re
+          - 2nde
+          - 3e
+          - 4e
+          - 5e
+          - 6e
+          - Tle
+        description: Niveau scolaire
+      - in: query
+        name: subject
+        schema:
+          type: string
+          enum:
+          - anglais
+          - francais
+          - histoire_geo
+          - maths
+          - physique_chimie
+          - svt
+        description: Code de la matière
+      tags:
+      - curriculum
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chapter'
+          description: ''
+  /api/curriculum/chapters/{id}/:
+    get:
+      operationId: curriculum_chapters_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) chapter.
+        required: true
+      - in: query
+        name: level
+        schema:
+          type: string
+          enum:
+          - 1re
+          - 2nde
+          - 3e
+          - 4e
+          - 5e
+          - 6e
+          - Tle
+        description: Niveau scolaire
+      - in: query
+        name: subject
+        schema:
+          type: string
+          enum:
+          - anglais
+          - francais
+          - histoire_geo
+          - maths
+          - physique_chimie
+          - svt
+        description: Code de la matière
+      tags:
+      - curriculum
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chapter'
+          description: ''
+  /api/curriculum/subjects/:
+    get:
+      operationId: curriculum_subjects_list
+      tags:
+      - curriculum
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/curriculum/subjects/{code}/:
+    get:
+      operationId: curriculum_subjects_retrieve
+      parameters:
+      - in: path
+        name: code
+        schema:
+          enum:
+          - maths
+          - physique_chimie
+          - svt
+          - francais
+          - anglais
+          - histoire_geo
+          type: string
+          description: |-
+            * `maths` - Mathématiques
+            * `physique_chimie` - Physique-Chimie
+            * `svt` - Sciences de la Vie et de la Terre
+            * `francais` - Français
+            * `anglais` - Anglais
+            * `histoire_geo` - Histoire-Géographie
+        required: true
+      tags:
+      - curriculum
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+          description: ''
+  /api/exercises/:
+    get:
+      operationId: exercises_list
+      summary: Mes parcours
+      parameters:
+      - in: query
+        name: chapter
+        schema:
+          type: string
+          format: uuid
+        description: Uniquement les parcours de ce chapitre.
+      - name: cursor
+        required: false
+        in: query
+        description: La valeur du curseur de pagination.
+        schema:
+          type: string
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExerciseList'
+          description: ''
+  /api/exercises/{id}/:
+    get:
+      operationId: exercises_retrieve
+      summary: Parcours sans les réponses attendues
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseDetail'
+          description: ''
+  /api/exercises/{id}/attempts/:
+    post:
+      operationId: exercises_attempts_create
+      summary: Démarrer une tentative
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttemptStart'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttemptStart'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttemptStart'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: Tentative déjà créée (même id).
+        '400':
+          description: Parcours pas encore prêt.
+  /api/exercises/{id}/events/:
+    get:
+      operationId: exercises_events_retrieve
+      summary: Suivre la génération en direct (SSE)
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - sse
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          description: 'Flux SSE : un événement par statut (`pending`, `generating`,
+            puis `ready`, `needs_review` ou `error`, qui terminent le flux), `data`
+            = le parcours comme dans `GET /api/exercises/{id}/` (l''événement `ready`
+            contient donc le contenu).'
+  /api/exercises/{id}/offline/:
+    get:
+      operationId: exercises_offline_retrieve
+      description: 'Inclut les réponses attendues : réservé au propriétaire du parcours,
+        jamais aux défis.'
+      summary: Parcours complet pour la correction hors-ligne
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseOffline'
+          description: ''
+  /api/extracted-exercises/{id}/:
+    patch:
+      operationId: extracted_exercises_partial_update
+      summary: Corriger un énoncé extrait (matière, niveau, chapitre)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedExtractedExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedExtractedExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedExtractedExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedExercise'
+          description: ''
+    delete:
+      operationId: extracted_exercises_destroy
+      summary: Écarter un énoncé extrait non validé
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/extracted-exercises/{id}/generate/:
+    post:
+      operationId: extracted_exercises_generate_create
+      description: Suivre l'avancement via `GET /api/exercises/{id}/`.
+      summary: Générer le parcours guidé d'un énoncé validé
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+          description: 'Génération lancée : suivre generation_status.'
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+          description: Parcours existant ou repris du cache.
+        '400':
+          description: Énoncé non validé ou matière non ouverte.
+        '429':
+          description: Quota journalier atteint (en-tête Retry-After).
+  /api/extracted-exercises/{id}/validate/:
+    post:
+      operationId: extracted_exercises_validate_create
+      description: Le document d'origine est supprimé dès que tous ses énoncés sont
+        validés.
+      summary: Valider un énoncé extrait
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) extracted exercise.
+        required: true
+      tags:
+      - extracted-exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedExercise'
+          description: ''
+        '400':
+          description: Matière ou niveau manquant.
+  /api/me/:
+    get:
+      operationId: me_retrieve
+      description: Profil de l'élève connecté (niveau, série, pseudo).
+      tags:
+      - me
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+    patch:
+      operationId: me_partial_update
+      description: Profil de l'élève connecté (niveau, série, pseudo).
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMe'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/progress/:
+    get:
+      operationId: progress_retrieve
+      summary: Ma progression et ma révision du jour
+      tags:
+      - progress
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progress'
+          description: ''
+  /api/sync/:
+    post:
+      operationId: sync_create
+      description: 'Idempotent : les tentatives (id) et réponses (client_uuid) déjà
+        reçues ne sont pas dupliquées. Le serveur recorrige chaque réponse ; son verdict
+        fait foi.'
+      summary: Synchroniser les tentatives faites hors-ligne
+      tags:
+      - sync
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+          description: ''
+  /api/uploads/:
+    post:
+      operationId: uploads_create
+      description: 'L''extraction est asynchrone : suivre `status` via `GET /api/uploads/{id}/`.'
+      summary: Envoyer un document d'exercices
+      tags:
+      - uploads
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: 'Document déjà envoyé : upload existant.'
+        '400':
+          description: Fichier refusé (type, taille, pages).
+        '429':
+          description: Quota journalier atteint (en-tête Retry-After).
+  /api/uploads/{id}/:
+    get:
+      operationId: uploads_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) upload.
+        required: true
+      tags:
+      - uploads
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: ''
+  /api/uploads/{id}/events/:
+    get:
+      operationId: uploads_events_retrieve
+      summary: Suivre l'extraction en direct (SSE)
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - sse
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) upload.
+        required: true
+      tags:
+      - uploads
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          description: 'Flux SSE : un événement par statut (`pending`, `reading`,
+            puis `extracted` ou `error`, qui terminent le flux), `data` = l''upload
+            comme dans `GET /api/uploads/{id}/`.'
 components:
   schemas:
+    AccessToken:
+      type: object
+      properties:
+        access:
+          type: string
+      required:
+      - access
+    AnswerCreate:
+      type: object
+      properties:
+        step_id:
+          type: string
+          maxLength: 20
+        response:
+          description: Format selon le type d'activité (README §5.1).
+        client_uuid:
+          type: string
+          format: uuid
+          description: 'Généré par le client : un renvoi ne crée pas de doublon.'
+        answered_at:
+          type: string
+          format: date-time
+        hints_used:
+          type: integer
+          maximum: 3
+          minimum: 0
+          description: Indices consultés hors-ligne pour cette étape.
+      required:
+      - client_uuid
+      - response
+      - step_id
+    AnswerResult:
+      type: object
+      properties:
+        is_correct:
+          type: boolean
+        feedback:
+          type: string
+          nullable: true
+        details:
+          type: object
+          additionalProperties: {}
+          description: Détail par élément (trous, points, paires…).
+        step:
+          $ref: '#/components/schemas/StepState'
+        explanation:
+          type: string
+          nullable: true
+          description: Correction rédigée, une fois l'étape close.
+        attempt:
+          $ref: '#/components/schemas/Attempt'
+      required:
+      - attempt
+      - details
+      - explanation
+      - feedback
+      - is_correct
+      - step
+    Attempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        exercise:
+          type: string
+          format: uuid
+          readOnly: true
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        score:
+          type: integer
+          readOnly: true
+        hints_used:
+          type: integer
+          readOnly: true
+        current_step_id:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Étape à traiter ; null si la tentative est finie.
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StepState'
+          readOnly: true
+      required:
+      - current_step_id
+      - exercise
+      - finished_at
+      - hints_used
+      - id
+      - mode
+      - score
+      - started_at
+      - steps
+    AttemptStart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 'Généré par le client (hors-ligne) : rend l''appel idempotent.'
+        started_at:
+          type: string
+          format: date-time
+    BlankEnum:
+      enum:
+      - ''
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        name:
+          type: string
+          maxLength: 200
+        order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - id
+      - level
+      - name
+      - subject
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        generation_status:
+          allOf:
+          - $ref: '#/components/schemas/GenerationStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chapter
+      - created_at
+      - error_message
+      - exam
+      - generation_status
+      - id
+      - level
+      - subject
+      - title
+    ExerciseDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        generation_status:
+          allOf:
+          - $ref: '#/components/schemas/GenerationStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        schema_version:
+          type: string
+          readOnly: true
+        content:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+          description: 'Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json)
+            sans les champs qui donnent la réponse : activity.answer, common_mistakes,
+            explanation, dernier indice. null tant que le parcours n''est pas prêt.'
+        current_attempt:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+          description: 'Tentative commencée et non finie à reprendre (détail : GET
+            /api/attempts/{id}/) ; null sinon.'
+      required:
+      - chapter
+      - content
+      - created_at
+      - current_attempt
+      - error_message
+      - exam
+      - generation_status
+      - id
+      - level
+      - schema_version
+      - subject
+      - title
+    ExerciseOffline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        generation_status:
+          allOf:
+          - $ref: '#/components/schemas/GenerationStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        schema_version:
+          type: string
+          readOnly: true
+        content:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+          description: 'Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json)
+            sans les champs qui donnent la réponse : activity.answer, common_mistakes,
+            explanation, dernier indice. null tant que le parcours n''est pas prêt.'
+        current_attempt:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+          description: 'Tentative commencée et non finie à reprendre (détail : GET
+            /api/attempts/{id}/) ; null sinon.'
+      required:
+      - chapter
+      - content
+      - created_at
+      - current_attempt
+      - error_message
+      - exam
+      - generation_status
+      - id
+      - level
+      - schema_version
+      - subject
+      - title
+    ExtractedExercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        order:
+          type: integer
+          readOnly: true
+        statement:
+          type: string
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          nullable: true
+        chapter:
+          type: string
+          format: uuid
+          nullable: true
+        chapter_hint:
+          type: string
+          readOnly: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        validated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - chapter_hint
+      - id
+      - order
+      - statement
+      - validated_at
     FileTypeEnum:
       enum:
       - image
@@ -94,38 +1154,604 @@ components:
       description: |-
         * `image` - Image
         * `pdf` - PDF
-    ProcessingStatusEnum:
+    GenerationStatusEnum:
       enum:
       - pending
-      - analyzing
       - generating
-      - done
+      - ready
+      - needs_review
       - error
       type: string
       description: |-
         * `pending` - En attente
-        * `analyzing` - Analyse
-        * `generating` - Génération QCM
-        * `done` - Terminé
+        * `generating` - Génération
+        * `ready` - Prêt
+        * `needs_review` - À revoir
         * `error` - Erreur
-    UploadDocument:
+    Hint:
+      type: object
+      properties:
+        step_id:
+          type: string
+        hint:
+          type: string
+        level:
+          type: integer
+        total:
+          type: integer
+      required:
+      - hint
+      - level
+      - step_id
+      - total
+    HintRequest:
+      type: object
+      properties:
+        step_id:
+          type: string
+          maxLength: 20
+      required:
+      - step_id
+    LevelEnum:
+      enum:
+      - 6e
+      - 5e
+      - 4e
+      - 3e
+      - 2nde
+      - 1re
+      - Tle
+      type: string
+      description: |-
+        * `6e` - 6e
+        * `5e` - 5e
+        * `4e` - 4e
+        * `3e` - 3e
+        * `2nde` - 2nde
+        * `1re` - 1re
+        * `Tle` - Terminale
+    Login:
+      type: object
+      description: Documentation OpenAPI de `auth/login` (la validation reste celle
+        de SimpleJWT).
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - phone
+    Mastery:
+      type: object
+      properties:
+        chapter:
+          $ref: '#/components/schemas/Chapter'
+        score:
+          type: integer
+          maximum: 100
+          minimum: 0
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        next_review_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chapter
+      - updated_at
+    Me:
+      type: object
+      properties:
+        phone:
+          type: string
+          readOnly: true
+        pseudo:
+          type: string
+          maxLength: 30
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        serie:
+          oneOf:
+          - $ref: '#/components/schemas/SerieEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - phone
+      - pseudo
+    ModeEnum:
+      enum:
+      - solo
+      - challenge
+      type: string
+      description: |-
+        * `solo` - Solo
+        * `challenge` - Défi
+    PaginatedExerciseList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exercise'
+    PatchedExtractedExercise:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        order:
+          type: integer
+          readOnly: true
+        statement:
+          type: string
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          nullable: true
+        chapter:
+          type: string
+          format: uuid
+          nullable: true
+        chapter_hint:
+          type: string
+          readOnly: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        validated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+    PatchedMe:
+      type: object
+      properties:
+        phone:
+          type: string
+          readOnly: true
+        pseudo:
+          type: string
+          maxLength: 30
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        serie:
+          oneOf:
+          - $ref: '#/components/schemas/SerieEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+    Progress:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/Summary'
+        subjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubjectProgress'
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mastery'
+        review_today:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewItem'
+          description: '« Révision du jour » : 10 parcours au plus.'
+      required:
+      - chapters
+      - review_today
+      - subjects
+      - summary
+    ReasonEnum:
+      enum:
+      - to_finish
+      - to_review
+      type: string
+      description: |-
+        * `to_finish` - to_finish
+        * `to_review` - to_review
+    Register:
+      type: object
+      description: 'Seule donnée personnelle collectée : le téléphone. `pseudo` est
+        un nom d''affichage.'
+      properties:
+        phone:
+          type: string
+          maxLength: 25
+        pseudo:
+          type: string
+          maxLength: 30
+        password:
+          type: string
+          writeOnly: true
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        serie:
+          oneOf:
+          - $ref: '#/components/schemas/SerieEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - level
+      - password
+      - phone
+      - pseudo
+    ReviewItem:
+      type: object
+      properties:
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          description: |-
+            to_finish : tentative commencée ; to_review : révision échue.
+
+            * `to_finish` - to_finish
+            * `to_review` - to_review
+        exercise:
+          $ref: '#/components/schemas/Exercise'
+        attempt:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tentative à reprendre (to_finish).
+        due_at:
+          type: string
+          format: date-time
+        last_score:
+          type: integer
+          nullable: true
+      required:
+      - attempt
+      - due_at
+      - exercise
+      - last_score
+      - reason
+    SerieEnum:
+      enum:
+      - A
+      - C
+      - D
+      type: string
+      description: |-
+        * `A` - A
+        * `C` - C
+        * `D` - D
+    StateEnum:
+      enum:
+      - non_acquis
+      - en_cours
+      - maitrise
+      type: string
+      description: |-
+        * `non_acquis` - Non acquis
+        * `en_cours` - En cours
+        * `maitrise` - Maîtrisé
+    StepState:
+      type: object
+      properties:
+        step_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/StepStateStatusEnum'
+        wrong_answers:
+          type: integer
+        hints_used:
+          type: integer
+        hints:
+          type: array
+          items:
+            type: string
+          description: 'Indices déjà obtenus (texte riche), du 1er au dernier : à
+            réafficher à la reprise.'
+        score:
+          type: integer
+          description: 'Sur 100 : 100 − 20 par indice − 20 par erreur ; 0 si échouée.'
+      required:
+      - hints
+      - hints_used
+      - score
+      - status
+      - step_id
+      - wrong_answers
+    StepStateStatusEnum:
+      enum:
+      - pending
+      - succeeded
+      - failed
+      type: string
+      description: |-
+        * `pending` - pending
+        * `succeeded` - succeeded
+        * `failed` - failed
+    Subject:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/SubjectCodeEnum'
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - code
+      - name
+    SubjectCodeEnum:
+      enum:
+      - maths
+      - physique_chimie
+      - svt
+      - francais
+      - anglais
+      - histoire_geo
+      type: string
+      description: |-
+        * `maths` - Mathématiques
+        * `physique_chimie` - Physique-Chimie
+        * `svt` - Sciences de la Vie et de la Terre
+        * `francais` - Français
+        * `anglais` - Anglais
+        * `histoire_geo` - Histoire-Géographie
+    SubjectProgress:
+      type: object
+      properties:
+        subject:
+          type: string
+        exercises_done:
+          type: integer
+        average_score:
+          type: integer
+      required:
+      - average_score
+      - exercises_done
+      - subject
+    Summary:
+      type: object
+      properties:
+        exercises_done:
+          type: integer
+          description: Parcours terminés au moins une fois.
+        attempts_finished:
+          type: integer
+        average_score:
+          type: integer
+          nullable: true
+        streak_days:
+          type: integer
+          description: Jours consécutifs d'activité, jusqu'à aujourd'hui ou hier.
+      required:
+      - attempts_finished
+      - average_score
+      - exercises_done
+      - streak_days
+    SyncAnswer:
+      type: object
+      properties:
+        step_id:
+          type: string
+          maxLength: 20
+        response:
+          description: Format selon le type d'activité (README §5.1).
+        client_uuid:
+          type: string
+          format: uuid
+          description: 'Généré par le client : un renvoi ne crée pas de doublon.'
+        answered_at:
+          type: string
+          format: date-time
+        hints_used:
+          type: integer
+          maximum: 3
+          minimum: 0
+          description: Indices consultés hors-ligne pour cette étape.
+      required:
+      - answered_at
+      - client_uuid
+      - response
+      - step_id
+    SyncAnswerResult:
+      type: object
+      properties:
+        client_uuid:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SyncAnswerResultStatusEnum'
+        is_correct:
+          type: boolean
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+      required:
+      - client_uuid
+      - is_correct
+      - reason
+      - status
+    SyncAnswerResultStatusEnum:
+      enum:
+      - accepted
+      - duplicate
+      - rejected
+      type: string
+      description: |-
+        * `accepted` - accepted
+        * `duplicate` - duplicate
+        * `rejected` - rejected
+    SyncAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        exercise:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAnswer'
+      required:
+      - answers
+      - exercise
+      - id
+      - started_at
+    SyncAttemptResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SyncAttemptResultStatusEnum'
+        reason:
+          type: string
+          nullable: true
+        attempt:
+          allOf:
+          - $ref: '#/components/schemas/Attempt'
+          nullable: true
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAnswerResult'
+      required:
+      - answers
+      - attempt
+      - id
+      - reason
+      - status
+    SyncAttemptResultStatusEnum:
+      enum:
+      - synced
+      - rejected
+      type: string
+      description: |-
+        * `synced` - synced
+        * `rejected` - rejected
+    SyncRequest:
+      type: object
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAttempt'
+      required:
+      - attempts
+    SyncResult:
+      type: object
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncAttemptResult'
+      required:
+      - attempts
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          description: Mobile uniquement ; le web l'envoie par cookie httpOnly (body
+            vide).
+    TokenRefreshResponse:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+          description: 'Nouveau refresh, seulement s''il a été envoyé dans le body
+            (sinon : cookie).'
+      required:
+      - access
+    Upload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        file_type:
+          allOf:
+          - $ref: '#/components/schemas/FileTypeEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/UploadStatusEnum'
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractedExercise'
+          readOnly: true
+      required:
+      - created_at
+      - error_message
+      - exercises
+      - file_type
+      - id
+      - status
+    UploadCreate:
       type: object
       properties:
         file:
           type: string
-          format: uri
-        file_type:
-          $ref: '#/components/schemas/FileTypeEnum'
-        processing_status:
-          $ref: '#/components/schemas/ProcessingStatusEnum'
+          format: binary
+          description: Photo (JPEG, PNG, WebP) ou PDF.
       required:
       - file
-      - file_type
+    UploadStatusEnum:
+      enum:
+      - pending
+      - reading
+      - extracted
+      - error
+      type: string
+      description: |-
+        * `pending` - En attente
+        * `reading` - Lecture en cours
+        * `extracted` - Énoncés extraits
+        * `error` - Erreur
   securitySchemes:
-    basicAuth:
+    jwtAuth:
       type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+      scheme: bearer
+      bearerFormat: JWT

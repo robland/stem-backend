@@ -1,0 +1,6 @@
+/* Jetons du design system, inlinés par Vite avant Tailwind (leur `@layer base` exige `@tailwind base`). */
+@import "@stem/ui/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,11 +1,28 @@
-stem_learning_app/config/.env
-stem_learning_app/.env
-stem_learning_app/documents/
-stem_learning_app/documents/*.*
+# Secrets
+.env
 .env.*
-.
+!.env.example
+stem_learning_app/.env/
+stem_learning_app/config/.env
+
+# Python / uv
 __pycache__/
 *.pyc
+.venv/
 venv/
+.pytest_cache/
+
+# Données locales
+*.sqlite3
+*.sqlite3.bak
+stem_learning_app/media/
+stem_learning_app/documents/
+stem_learning_app/staticfiles/
+stem_learning_app/openai.response.json
+
+# IDE
 .idea/
-.gitignore
+
+# Notes personnelles hors projet
+historic_commands
+prompt_recherche_emploi

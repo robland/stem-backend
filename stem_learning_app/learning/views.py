@@ -1,0 +1,109 @@
+from uuid import UUID
+
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import CursorPagination
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+
+from config import sse
+
+from . import attempts as attempt_service
+from .attempt_serializers import AttemptSerializer, AttemptStartSerializer
+from .models import Exercise
+from .serializers import ExerciseDetailSerializer, ExerciseOfflineSerializer, ExerciseSerializer
+
+
+TERMINAL_GENERATION_STATUSES = {
+    Exercise.GenerationStatus.READY, Exercise.GenerationStatus.NEEDS_REVIEW, Exercise.GenerationStatus.ERROR,
+}
+
+
+class ExercisePagination(CursorPagination):
+    page_size = 20
+    ordering = "-created_at"
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Mes parcours",
+        parameters=[OpenApiParameter("chapter", UUID, description="Uniquement les parcours de ce chapitre.")],
+    ),
+    retrieve=extend_schema(summary="Parcours sans les réponses attendues"),
+)
+class ExerciseViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = ExercisePagination
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # génération du schéma OpenAPI
+            return Exercise.objects.none()
+        # V1 : uniquement ses propres parcours (les défis viendront en V2).
+        queryset = Exercise.objects.filter(owner=self.request.user).select_related("subject")
+        chapter = self.request.query_params.get("chapter")
+        if self.action == "list" and chapter:
+            try:
+                queryset = queryset.filter(chapter_id=UUID(chapter))
+            except ValueError:
+                raise ValidationError({"chapter": "Identifiant de chapitre invalide."})
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ExerciseSerializer
+        if self.action == "offline":
+            return ExerciseOfflineSerializer
+        if self.action == "attempts":
+            return AttemptStartSerializer
+        return ExerciseDetailSerializer
+
+    @extend_schema(
+        summary="Parcours complet pour la correction hors-ligne",
+        description="Inclut les réponses attendues : réservé au propriétaire du parcours, jamais aux défis.",
+    )
+    @action(detail=True, methods=["get"])
+    def offline(self, request, pk=None):
+        return Response(self.get_serializer(self.get_object()).data)
+
+    @extend_schema(
+        responses=sse.event_stream_response(
+            "Flux SSE : un événement par statut (`pending`, `generating`, puis `ready`, `needs_review` ou "
+            "`error`, qui terminent le flux), `data` = le parcours comme dans `GET /api/exercises/{id}/` "
+            "(l'événement `ready` contient donc le contenu)."
+        ),
+        summary="Suivre la génération en direct (SSE)",
+    )
+    @action(detail=True, methods=["get"], renderer_classes=[JSONRenderer, sse.EventStreamRenderer])
+    def events(self, request, pk=None):
+        exercise = self.get_object()
+        queryset = self.get_queryset()
+
+        def snapshot():
+            current = queryset.filter(pk=exercise.pk).first()
+            return current and (current.generation_status, ExerciseDetailSerializer(current, context={"request": request}).data)
+
+        return sse.stream(snapshot, terminal=TERMINAL_GENERATION_STATUSES)
+
+    @extend_schema(
+        request=AttemptStartSerializer,
+        responses={
+            201: AttemptSerializer,
+            200: OpenApiResponse(AttemptSerializer, description="Tentative déjà créée (même id)."),
+            400: OpenApiResponse(description="Parcours pas encore prêt."),
+        },
+        summary="Démarrer une tentative",
+    )
+    @action(detail=True, methods=["post"])
+    def attempts(self, request, pk=None):
+        exercise = self.get_object()
+        serializer = AttemptStartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            attempt, created = attempt_service.start_attempt(
+                request.user, exercise,
+                serializer.validated_data.get("id"), serializer.validated_data.get("started_at"),
+            )
+        except attempt_service.AttemptError as e:
+            raise ValidationError({"detail": str(e)})
+        return Response(AttemptSerializer(attempt).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

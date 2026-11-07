@@ -1,0 +1,251 @@
+"""
+Settings communs à tous les environnements.
+
+Les valeurs propres à un environnement sont dans dev.py / prod.py / test.py.
+Toute configuration sensible vient des variables d'environnement (voir .env.example).
+"""
+
+import os
+from datetime import timedelta
+from pathlib import Path
+
+import dj_database_url
+from celery.schedules import crontab
+from dotenv import load_dotenv
+
+# stem_learning_app/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# racine du dépôt
+REPO_DIR = BASE_DIR.parent
+
+# Les variables déjà définies (Docker, CI, hébergeur) ne sont jamais écrasées.
+load_dotenv(REPO_DIR / ".env", override=False)
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def env_list(name, default=""):
+    value = os.environ.get(name, default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "")
+DEBUG = False
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# LLM : fournisseur interchangeable (app llm), modèle choisi par tâche.
+LLM_CLIENT = os.environ.get("LLM_CLIENT", "llm.clients.openai.OpenAIClient")
+LLM_MODELS = {
+    "extraction": os.environ.get("LLM_MODEL_EXTRACTION", "gpt-4.1-mini"),
+    "generation": os.environ.get("LLM_MODEL_GENERATION", "gpt-4.1"),
+}
+LLM_TIMEOUT_SECONDS = int(os.environ.get("LLM_TIMEOUT_SECONDS", "90"))
+LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "2"))
+
+# Uploads d'exercices (app ingestion)
+UPLOAD_MAX_BYTES = int(os.environ.get("UPLOAD_MAX_BYTES", 10 * 1024 * 1024))
+UPLOAD_MAX_PDF_PAGES = int(os.environ.get("UPLOAD_MAX_PDF_PAGES", "4"))
+# Nouveaux documents par élève et par jour (fuseau TIME_ZONE) : chaque document coûte un appel LLM.
+UPLOAD_DAILY_QUOTA = int(os.environ.get("UPLOAD_DAILY_QUOTA", "10"))
+# Au-delà, le fichier est supprimé même si l'élève n'a pas validé ses énoncés.
+UPLOAD_FILE_RETENTION_HOURS = int(os.environ.get("UPLOAD_FILE_RETENTION_HOURS", "48"))
+# Au-delà, un traitement asynchrone (extraction, génération) est considéré comme bloqué
+# (worker arrêté, message perdu). Doit rester supérieur à CELERY_TASK_TIME_LIMIT.
+JOB_STUCK_AFTER_MINUTES = int(os.environ.get("JOB_STUCK_AFTER_MINUTES", "15"))
+
+# Génération des parcours (app learning)
+# Matières ouvertes à la génération (V1 : Maths et Physique-Chimie).
+GENERATION_SUBJECTS = env_list("GENERATION_SUBJECTS", "maths,physique_chimie")
+# Générations par élève et par jour (les parcours repris du cache ne comptent pas).
+GENERATION_DAILY_QUOTA = int(os.environ.get("GENERATION_DAILY_QUOTA", "20"))
+# Essais de génération quand la revérification (app grading) détecte une erreur ; ensuite « needs_review ».
+GENERATION_ATTEMPTS = int(os.environ.get("GENERATION_ATTEMPTS", "2"))
+
+# Suivi en direct (SSE, config/sse.py). Chaque flux ouvert occupe un thread gunicorn :
+# au-delà de SSE_MAX_SECONDS le flux se ferme et le client se reconnecte (après SSE_RETRY_MS).
+SSE_POLL_SECONDS = float(os.environ.get("SSE_POLL_SECONDS", "1"))
+SSE_HEARTBEAT_SECONDS = float(os.environ.get("SSE_HEARTBEAT_SECONDS", "15"))
+SSE_MAX_SECONDS = float(os.environ.get("SSE_MAX_SECONDS", "120"))
+SSE_RETRY_MS = int(os.environ.get("SSE_RETRY_MS", "3000"))
+
+# Tentatives (README §5.2) : une étape est close après réussite ou après ce nombre d'erreurs.
+ATTEMPT_MAX_WRONG_ANSWERS = int(os.environ.get("ATTEMPT_MAX_WRONG_ANSWERS", "3"))
+
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+
+# Application definition
+
+INSTALLED_APPS = [
+    'accounts',
+    'curriculum',
+    'ingestion',
+    'learning',
+    'llm',
+    'grading',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
+    'drf_spectacular',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'config.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'config.wsgi.application'
+
+
+# Database
+# SQLite par défaut (dev hors Docker) ; PostgreSQL via DATABASE_URL.
+# `or` et non `config(default=…)` : la ligne `DATABASE_URL=` vide de .env.example donnerait le moteur « dummy ».
+
+DATABASES = {
+    'default': dj_database_url.parse(
+        os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Authentication
+
+AUTH_USER_MODEL = 'accounts.User'
+
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# Cookie httpOnly qui porte le refresh token pour le client web.
+REFRESH_COOKIE_NAME = "refresh_token"
+REFRESH_COOKIE_PATH = "/api/auth/"
+REFRESH_COOKIE_SECURE = env_bool("REFRESH_COOKIE_SECURE", True)
+# "None" si le front est servi depuis un autre domaine que l'API (impose Secure).
+REFRESH_COOKIE_SAMESITE = os.environ.get("REFRESH_COOKIE_SAMESITE", "Lax")
+
+
+# API
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'STEM API',
+    'DESCRIPTION': "Apprentissage guidé étape par étape (chain of thought) pour collégiens et lycéens.",
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Noms stables des énumérations partagées avec le client TypeScript généré.
+    'ENUM_NAME_OVERRIDES': {
+        'SubjectCodeEnum': 'curriculum.choices.SubjectCode',
+        'LevelEnum': 'curriculum.choices.Level',
+        'SerieEnum': 'curriculum.choices.Serie',
+    },
+}
+
+
+# Celery
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Africa/Brazzaville"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 60 * 10  # 10 minutes max par tâche
+# Tâches périodiques (processus `celery beat`, ou `manage.py run_maintenance` en cron).
+CELERY_BEAT_SCHEDULE = {
+    "recover-stuck-jobs": {"task": "ingestion.tasks.run_maintenance", "schedule": crontab(minute="*/5")},
+    "purge-upload-files": {"task": "ingestion.tasks.purge_expired_upload_files", "schedule": crontab(minute=0)},
+}
+
+
+# Internationalization
+
+LANGUAGE_CODE = 'fr-fr'
+TIME_ZONE = 'Africa/Brazzaville'
+USE_I18N = True
+USE_TZ = True
+
+
+# Static & media files
+
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / 'media'))
+
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'root': {'handlers': ['console'], 'level': os.environ.get("LOG_LEVEL", "INFO")},
+}

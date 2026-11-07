@@ -1,0 +1,78 @@
+/* Jetons de design (RVB sans alpha, pour l'opacité Tailwind). Contrastes texte ≥ AA sur bg et surface. */
+@layer base {
+  :root {
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Ubuntu, sans-serif;
+
+    --bg: 247 247 251;
+    --surface: 255 255 255;
+    --surface-2: 238 239 246;
+    --border: 216 218 230;
+    --fg: 22 24 38;
+    --muted: 82 87 112;
+
+    --primary: 67 56 202;
+    --primary-fg: 255 255 255;
+    --primary-soft: 228 226 252;
+    --accent: 180 83 9;
+    --accent-fg: 255 255 255;
+    --accent-soft: 254 240 199;
+    --success: 21 128 61;
+    --success-soft: 220 247 229;
+    --danger: 185 28 28;
+    --danger-soft: 254 226 226;
+    --ring: 99 102 241;
+
+    color-scheme: light;
+  }
+
+  [data-theme="dark"] {
+    --bg: 14 15 24;
+    --surface: 24 26 39;
+    --surface-2: 35 38 56;
+    --border: 55 59 84;
+    --fg: 236 237 245;
+    --muted: 166 170 194;
+
+    --primary: 148 141 255;
+    --primary-fg: 17 16 48;
+    --primary-soft: 44 41 92;
+    --accent: 251 191 36;
+    --accent-fg: 38 24 0;
+    --accent-soft: 66 48 12;
+    --success: 74 222 128;
+    --success-soft: 18 56 34;
+    --danger: 248 113 113;
+    --danger-soft: 72 22 24;
+    --ring: 165 160 255;
+
+    color-scheme: dark;
+  }
+
+  [data-font="dyslexic"] {
+    --font-sans: "OpenDyslexic", system-ui, sans-serif;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--ring));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

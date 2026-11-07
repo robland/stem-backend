@@ -1,0 +1,1214 @@
+{
+  "$defs": {
+    "Axes": {
+      "additionalProperties": false,
+      "properties": {
+        "x_max": {
+          "title": "X Max",
+          "type": "number"
+        },
+        "x_min": {
+          "title": "X Min",
+          "type": "number"
+        },
+        "y_max": {
+          "title": "Y Max",
+          "type": "number"
+        },
+        "y_min": {
+          "title": "Y Min",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x_min",
+        "x_max",
+        "y_min",
+        "y_max"
+      ],
+      "title": "Axes",
+      "type": "object"
+    },
+    "Blank": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Accepted",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "accepted"
+      ],
+      "title": "Blank",
+      "type": "object"
+    },
+    "ChemBalanceActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/ChemBalanceAnswer"
+        },
+        "grading": {
+          "const": "chem_balance",
+          "title": "Grading",
+          "type": "string"
+        },
+        "products": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Products",
+          "type": "array"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "reactants": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reactants",
+          "type": "array"
+        },
+        "type": {
+          "const": "chem_balance",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "reactants",
+        "products",
+        "answer"
+      ],
+      "title": "ChemBalanceActivity",
+      "type": "object"
+    },
+    "ChemBalanceAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "coefficients": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Coefficients",
+          "type": "array"
+        }
+      },
+      "required": [
+        "coefficients"
+      ],
+      "title": "ChemBalanceAnswer",
+      "type": "object"
+    },
+    "ChemFormulaActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/ChemFormulaAnswer"
+        },
+        "grading": {
+          "const": "exact",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "chem_formula",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "answer"
+      ],
+      "title": "ChemFormulaActivity",
+      "type": "object"
+    },
+    "ChemFormulaAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "formula": {
+          "title": "Formula",
+          "type": "string"
+        }
+      },
+      "required": [
+        "formula"
+      ],
+      "title": "ChemFormulaAnswer",
+      "type": "object"
+    },
+    "CommonMistake": {
+      "additionalProperties": false,
+      "properties": {
+        "feedback": {
+          "title": "Feedback",
+          "type": "string"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pattern",
+        "feedback"
+      ],
+      "title": "CommonMistake",
+      "type": "object"
+    },
+    "FillBlanksActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/FillBlanksAnswer"
+        },
+        "grading": {
+          "const": "normalized_text",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "type": {
+          "const": "fill_blanks",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "text",
+        "answer"
+      ],
+      "title": "FillBlanksActivity",
+      "type": "object"
+    },
+    "FillBlanksAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "blanks": {
+          "items": {
+            "$ref": "#/$defs/Blank"
+          },
+          "title": "Blanks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "blanks"
+      ],
+      "title": "FillBlanksAnswer",
+      "type": "object"
+    },
+    "FormulaAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "expression": {
+          "title": "Expression",
+          "type": "string"
+        },
+        "form": {
+          "enum": [
+            "any",
+            "expanded",
+            "factored",
+            "irreducible_fraction"
+          ],
+          "title": "Form",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source"
+        },
+        "variables": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Variables",
+          "type": "array"
+        }
+      },
+      "required": [
+        "expression",
+        "variables",
+        "form",
+        "source"
+      ],
+      "title": "FormulaAnswer",
+      "type": "object"
+    },
+    "FormulaInputActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/FormulaAnswer"
+        },
+        "grading": {
+          "const": "symbolic",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "formula_input",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "answer"
+      ],
+      "title": "FormulaInputActivity",
+      "type": "object"
+    },
+    "GraphParametersActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/GraphParametersAnswer"
+        },
+        "axes": {
+          "$ref": "#/$defs/Axes"
+        },
+        "function": {
+          "title": "Function",
+          "type": "string"
+        },
+        "grading": {
+          "const": "numeric",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sliders": {
+          "items": {
+            "$ref": "#/$defs/Slider"
+          },
+          "title": "Sliders",
+          "type": "array"
+        },
+        "tolerance": {
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "type": {
+          "const": "graph_parameters",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "axes",
+        "function",
+        "sliders",
+        "tolerance",
+        "answer"
+      ],
+      "title": "GraphParametersActivity",
+      "type": "object"
+    },
+    "GraphParametersAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "values": {
+          "items": {
+            "$ref": "#/$defs/ParameterValue"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "title": "GraphParametersAnswer",
+      "type": "object"
+    },
+    "GraphPointsActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/GraphPointsAnswer"
+        },
+        "axes": {
+          "$ref": "#/$defs/Axes"
+        },
+        "grading": {
+          "const": "numeric",
+          "title": "Grading",
+          "type": "string"
+        },
+        "points_to_place": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Points To Place",
+          "type": "array"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "tolerance": {
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "type": {
+          "const": "graph_points",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "axes",
+        "points_to_place",
+        "tolerance",
+        "answer"
+      ],
+      "title": "GraphPointsActivity",
+      "type": "object"
+    },
+    "GraphPointsAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "function": {
+          "title": "Function",
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "function",
+        "points"
+      ],
+      "title": "GraphPointsAnswer",
+      "type": "object"
+    },
+    "Intuition": {
+      "additionalProperties": false,
+      "properties": {
+        "example": {
+          "title": "Example",
+          "type": "string"
+        },
+        "mental_image": {
+          "title": "Mental Image",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mental_image",
+        "example"
+      ],
+      "title": "Intuition",
+      "type": "object"
+    },
+    "Item": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content"
+      ],
+      "title": "Item",
+      "type": "object"
+    },
+    "MatchingActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/MatchingAnswer"
+        },
+        "grading": {
+          "const": "exact",
+          "title": "Grading",
+          "type": "string"
+        },
+        "left": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Left",
+          "type": "array"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "right": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Right",
+          "type": "array"
+        },
+        "type": {
+          "const": "matching",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "left",
+        "right",
+        "answer"
+      ],
+      "title": "MatchingActivity",
+      "type": "object"
+    },
+    "MatchingAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "pairs": {
+          "items": {
+            "$ref": "#/$defs/Pair"
+          },
+          "title": "Pairs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "pairs"
+      ],
+      "title": "MatchingAnswer",
+      "type": "object"
+    },
+    "McqActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/McqAnswer"
+        },
+        "grading": {
+          "const": "exact",
+          "title": "Grading",
+          "type": "string"
+        },
+        "multiple": {
+          "title": "Multiple",
+          "type": "boolean"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "mcq",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "options",
+        "multiple",
+        "answer"
+      ],
+      "title": "McqActivity",
+      "type": "object"
+    },
+    "McqAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "option_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Option Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "option_ids"
+      ],
+      "title": "McqAnswer",
+      "type": "object"
+    },
+    "OrderingActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/OrderingAnswer"
+        },
+        "grading": {
+          "const": "exact",
+          "title": "Grading",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "ordering",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "items",
+        "answer"
+      ],
+      "title": "OrderingActivity",
+      "type": "object"
+    },
+    "OrderingAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Order",
+          "type": "array"
+        }
+      },
+      "required": [
+        "order"
+      ],
+      "title": "OrderingAnswer",
+      "type": "object"
+    },
+    "Pair": {
+      "additionalProperties": false,
+      "properties": {
+        "left_id": {
+          "title": "Left Id",
+          "type": "string"
+        },
+        "right_id": {
+          "title": "Right Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "left_id",
+        "right_id"
+      ],
+      "title": "Pair",
+      "type": "object"
+    },
+    "ParameterValue": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "ParameterValue",
+      "type": "object"
+    },
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "Recall": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "formula",
+            "definition",
+            "property",
+            "method"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "content",
+        "explanation"
+      ],
+      "title": "Recall",
+      "type": "object"
+    },
+    "ShortAnswerActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/ShortAnswerAnswer"
+        },
+        "grading": {
+          "enum": [
+            "normalized_text",
+            "numeric"
+          ],
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "short_answer",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "answer"
+      ],
+      "title": "ShortAnswerActivity",
+      "type": "object"
+    },
+    "ShortAnswerAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Accepted",
+          "type": "array"
+        },
+        "tolerance": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tolerance"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "accepted",
+        "value",
+        "tolerance",
+        "unit"
+      ],
+      "title": "ShortAnswerAnswer",
+      "type": "object"
+    },
+    "Slider": {
+      "additionalProperties": false,
+      "properties": {
+        "initial": {
+          "title": "Initial",
+          "type": "number"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number"
+        },
+        "min": {
+          "title": "Min",
+          "type": "number"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "step": {
+          "title": "Step",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "min",
+        "max",
+        "step",
+        "initial"
+      ],
+      "title": "Slider",
+      "type": "object"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "activity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/McqActivity"
+            },
+            {
+              "$ref": "#/$defs/TrueFalseActivity"
+            },
+            {
+              "$ref": "#/$defs/ShortAnswerActivity"
+            },
+            {
+              "$ref": "#/$defs/FillBlanksActivity"
+            },
+            {
+              "$ref": "#/$defs/MatchingActivity"
+            },
+            {
+              "$ref": "#/$defs/OrderingActivity"
+            },
+            {
+              "$ref": "#/$defs/FormulaInputActivity"
+            },
+            {
+              "$ref": "#/$defs/GraphPointsActivity"
+            },
+            {
+              "$ref": "#/$defs/GraphParametersActivity"
+            },
+            {
+              "$ref": "#/$defs/VariationTableActivity"
+            },
+            {
+              "$ref": "#/$defs/ChemBalanceActivity"
+            },
+            {
+              "$ref": "#/$defs/ChemFormulaActivity"
+            },
+            {
+              "$ref": "#/$defs/UnitConversionActivity"
+            }
+          ],
+          "title": "Activity"
+        },
+        "common_mistakes": {
+          "items": {
+            "$ref": "#/$defs/CommonMistake"
+          },
+          "title": "Common Mistakes",
+          "type": "array"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "hints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hints",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^s[0-9]{1,2}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "skill": {
+          "pattern": "^[a-z0-9_]{1,60}$",
+          "title": "Skill",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "objective",
+        "skill",
+        "activity",
+        "hints",
+        "common_mistakes",
+        "explanation"
+      ],
+      "title": "Step",
+      "type": "object"
+    },
+    "Summary": {
+      "additionalProperties": false,
+      "properties": {
+        "key_takeaway": {
+          "title": "Key Takeaway",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key_takeaway"
+      ],
+      "title": "Summary",
+      "type": "object"
+    },
+    "TrueFalseActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/TrueFalseAnswer"
+        },
+        "grading": {
+          "const": "exact",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "true_false",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "answer"
+      ],
+      "title": "TrueFalseActivity",
+      "type": "object"
+    },
+    "TrueFalseAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "TrueFalseAnswer",
+      "type": "object"
+    },
+    "UnitConversionActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/UnitConversionAnswer"
+        },
+        "from_unit": {
+          "title": "From Unit",
+          "type": "string"
+        },
+        "grading": {
+          "const": "numeric",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "to_unit": {
+          "title": "To Unit",
+          "type": "string"
+        },
+        "tolerance": {
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "type": {
+          "const": "unit_conversion",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "value",
+        "from_unit",
+        "to_unit",
+        "tolerance",
+        "answer"
+      ],
+      "title": "UnitConversionActivity",
+      "type": "object"
+    },
+    "UnitConversionAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "UnitConversionAnswer",
+      "type": "object"
+    },
+    "VariationTableActivity": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/VariationTableAnswer"
+        },
+        "grading": {
+          "const": "exact",
+          "title": "Grading",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "type": {
+          "const": "variation_table",
+          "title": "Type",
+          "type": "string"
+        },
+        "x_values": {
+          "items": {
+            "type": "string"
+          },
+          "title": "X Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "grading",
+        "prompt",
+        "x_values",
+        "answer"
+      ],
+      "title": "VariationTableActivity",
+      "type": "object"
+    },
+    "VariationTableAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "arrows": {
+          "items": {
+            "enum": [
+              "up",
+              "down"
+            ],
+            "type": "string"
+          },
+          "title": "Arrows",
+          "type": "array"
+        },
+        "function": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Function"
+        },
+        "signs": {
+          "items": {
+            "enum": [
+              "+",
+              "-"
+            ],
+            "type": "string"
+          },
+          "title": "Signs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "signs",
+        "arrows",
+        "function"
+      ],
+      "title": "VariationTableAnswer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Contenu stocké dans Exercise.content.",
+  "properties": {
+    "intuition": {
+      "$ref": "#/$defs/Intuition"
+    },
+    "recall": {
+      "items": {
+        "$ref": "#/$defs/Recall"
+      },
+      "title": "Recall",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/Step"
+      },
+      "title": "Steps",
+      "type": "array"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "intuition",
+    "recall",
+    "steps",
+    "summary",
+    "schema_version",
+    "statement"
+  ],
+  "title": "ExerciseContent",
+  "type": "object"
+}

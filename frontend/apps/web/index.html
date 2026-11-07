@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#4338ca" />
+    <meta name="description" content="Photographie ton exercice et apprends à le résoudre étape par étape." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>StemLearning</title>
+    <script>
+      // Thème appliqué avant le premier rendu (évite un flash clair en mode sombre).
+      try {
+        var p = JSON.parse(localStorage.getItem("stem.preferences") || "{}");
+        var dark =
+          p.theme === "dark" || (p.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        if (p.dyslexicFont) document.documentElement.dataset.font = "dyslexic";
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
