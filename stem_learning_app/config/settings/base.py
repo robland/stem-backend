@@ -68,6 +68,13 @@ GENERATION_DAILY_QUOTA = int(os.environ.get("GENERATION_DAILY_QUOTA", "20"))
 # Essais de génération quand la revérification (app grading) détecte une erreur ; ensuite « needs_review ».
 GENERATION_ATTEMPTS = int(os.environ.get("GENERATION_ATTEMPTS", "2"))
 
+# Suivi en direct (SSE, config/sse.py). Chaque flux ouvert occupe un thread gunicorn :
+# au-delà de SSE_MAX_SECONDS le flux se ferme et le client se reconnecte (après SSE_RETRY_MS).
+SSE_POLL_SECONDS = float(os.environ.get("SSE_POLL_SECONDS", "1"))
+SSE_HEARTBEAT_SECONDS = float(os.environ.get("SSE_HEARTBEAT_SECONDS", "15"))
+SSE_MAX_SECONDS = float(os.environ.get("SSE_MAX_SECONDS", "120"))
+SSE_RETRY_MS = int(os.environ.get("SSE_RETRY_MS", "3000"))
+
 # Tentatives (README §5.2) : une étape est close après réussite ou après ce nombre d'erreurs.
 ATTEMPT_MAX_WRONG_ANSWERS = int(os.environ.get("ATTEMPT_MAX_WRONG_ANSWERS", "3"))
 

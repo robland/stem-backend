@@ -26,6 +26,10 @@ CELERY_BROKER_URL = "memory://"
 
 REFRESH_COOKIE_SECURE = False
 
+# Flux SSE sans attente ; les tests font avancer l'état entre deux événements.
+SSE_POLL_SECONDS = 0
+SSE_MAX_SECONDS = 5
+
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.InMemoryStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},

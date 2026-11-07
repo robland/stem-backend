@@ -3,12 +3,20 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import CursorPagination
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+
+from config import sse
 
 from . import attempts as attempt_service
 from .attempt_serializers import AttemptSerializer, AttemptStartSerializer
 from .models import Exercise
 from .serializers import ExerciseDetailSerializer, ExerciseOfflineSerializer, ExerciseSerializer
+
+
+TERMINAL_GENERATION_STATUSES = {
+    Exercise.GenerationStatus.READY, Exercise.GenerationStatus.NEEDS_REVIEW, Exercise.GenerationStatus.ERROR,
+}
 
 
 class ExercisePagination(CursorPagination):
@@ -45,6 +53,25 @@ class ExerciseViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def offline(self, request, pk=None):
         return Response(self.get_serializer(self.get_object()).data)
+
+    @extend_schema(
+        responses=sse.event_stream_response(
+            "Flux SSE : un événement par statut (`pending`, `generating`, puis `ready`, `needs_review` ou "
+            "`error`, qui terminent le flux), `data` = le parcours comme dans `GET /api/exercises/{id}/` "
+            "(l'événement `ready` contient donc le contenu)."
+        ),
+        summary="Suivre la génération en direct (SSE)",
+    )
+    @action(detail=True, methods=["get"], renderer_classes=[JSONRenderer, sse.EventStreamRenderer])
+    def events(self, request, pk=None):
+        exercise = self.get_object()
+        queryset = self.get_queryset()
+
+        def snapshot():
+            current = queryset.filter(pk=exercise.pk).first()
+            return current and (current.generation_status, ExerciseDetailSerializer(current).data)
+
+        return sse.stream(snapshot, terminal=TERMINAL_GENERATION_STATUSES)
 
     @extend_schema(
         request=AttemptStartSerializer,

@@ -423,6 +423,39 @@ paths:
           description: Tentative déjà créée (même id).
         '400':
           description: Parcours pas encore prêt.
+  /api/exercises/{id}/events/:
+    get:
+      operationId: exercises_events_retrieve
+      summary: Suivre la génération en direct (SSE)
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - sse
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) exercise.
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          description: 'Flux SSE : un événement par statut (`pending`, `generating`,
+            puis `ready`, `needs_review` ou `error`, qui terminent le flux), `data`
+            = le parcours comme dans `GET /api/exercises/{id}/` (l''événement `ready`
+            contient donc le contenu).'
   /api/exercises/{id}/offline/:
     get:
       operationId: exercises_offline_retrieve
@@ -700,6 +733,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/Upload'
           description: ''
+  /api/uploads/{id}/events/:
+    get:
+      operationId: uploads_events_retrieve
+      summary: Suivre l'extraction en direct (SSE)
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - sse
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) upload.
+        required: true
+      tags:
+      - uploads
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          description: 'Flux SSE : un événement par statut (`pending`, `reading`,
+            puis `extracted` ou `error`, qui terminent le flux), `data` = l''upload
+            comme dans `GET /api/uploads/{id}/`.'
 components:
   schemas:
     AnswerCreate:

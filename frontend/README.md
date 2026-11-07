@@ -31,7 +31,7 @@
 5. **Indices toujours accessibles** (bouton 💡, 3 niveaux, coût en points affiché).
 6. **Ton adapté au niveau** (collège plus imagé, lycée plus rigoureux) — vient du contenu, l'UI reste neutre.
 7. **Accessibilité** : police adaptée à la dyslexie en option, lecture audio des énoncés (synthèse vocale de l'appareil), mode sombre, cibles tactiles ≥ 44 px, contrastes AA.
-8. **Feedback de chargement pédagogique** : l'analyse prend 20–60 s → progression en direct (SSE), messages explicites, première étape affichée dès qu'elle est prête.
+8. **Feedback de chargement pédagogique** : l'analyse prend 20–60 s → progression en direct (SSE), messages explicites, parcours affiché dès qu'il est prêt (l'événement `ready` contient le contenu).
 
 ### Navigation (5 onglets)
 
@@ -146,7 +146,7 @@ frontend/
 - Utiliser **uniquement** `packages/api-client`, régénéré depuis `/api/schema/` du backend (`pnpm api:generate`). Pas d'appels `fetch` écrits à la main.
 - Auth : access token JWT en mémoire ; refresh en cookie httpOnly (web) / `expo-secure-store` (mobile, refresh envoyé dans le body) ; rafraîchissement automatique sur 401.
 - Correction hors-ligne (`packages/grading`) : reproduire **exactement** les règles du backend README §5.1 (formats de réponse, normalisation du texte et des nombres, syntaxe des expressions, forme des expressions `answer.form`, formules chimiques) ; des cas de test partagés seront exportés depuis `grading/tests`.
-- Progression d'analyse : SSE `GET /api/uploads/{id}/events` (fallback polling `GET /api/uploads/{id}` toutes les 3 s si SSE indisponible).
+- Progression : SSE `GET /api/uploads/{id}/events` (extraction) et `GET /api/exercises/{id}/events` (génération), cf. backend README §7. Client SSE basé sur `fetch` (ex. `@microsoft/fetch-event-source`) pour envoyer l'en-tête `Authorization` — l'`EventSource` natif ne le permet pas, et jamais de jeton dans l'URL. Fermer le flux sur un statut final ; sur une fermeture du serveur, se reconnecter (l'état courant est renvoyé). Fallback polling `GET /api/uploads/{id}` / `GET /api/exercises/{id}` toutes les 3 s si SSE indisponible.
 - Uploads : l'API n'expose jamais le fichier envoyé → **garder la photo locale** pour l'afficher à côté de l'énoncé pendant la correction. Réenvoyer le même fichier est sans risque (réponse `200`, même upload). Sur `429`, afficher le quota atteint et l'heure de `Retry-After`. Compresser avant envoi (≤ 10 Mo, côté long ~2048 px suffit).
 - Si un endpoint nécessaire n'existe pas encore : **ne pas l'inventer côté front**, le signaler et l'ajouter à l'état d'avancement du backend.
 

@@ -7,8 +7,10 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.parsers import MultiPartParser
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
+from config import sse
 from learning import services as learning_services
 from learning.serializers import ExerciseSerializer
 
@@ -76,6 +78,24 @@ class UploadViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return Response(self.get_serializer(existing).data, status=status.HTTP_200_OK)
 
         return Response(self.get_serializer(upload).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        responses=sse.event_stream_response(
+            "Flux SSE : un événement par statut (`pending`, `reading`, puis `extracted` ou `error`, qui "
+            "terminent le flux), `data` = l'upload comme dans `GET /api/uploads/{id}/`."
+        ),
+        summary="Suivre l'extraction en direct (SSE)",
+    )
+    @action(detail=True, methods=["get"], renderer_classes=[JSONRenderer, sse.EventStreamRenderer])
+    def events(self, request, pk=None):
+        upload = self.get_object()
+        queryset = self.get_queryset()
+
+        def snapshot():
+            current = queryset.filter(pk=upload.pk).first()
+            return current and (current.status, UploadSerializer(current).data)
+
+        return sse.stream(snapshot, terminal={Upload.Status.EXTRACTED, Upload.Status.ERROR})
 
 
 @extend_schema_view(

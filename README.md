@@ -254,7 +254,8 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | GET | `curriculum/subjects`, `curriculum/chapters?subject=&level=` | référentiel |
 | POST | `uploads` | multipart `file` (JPEG/PNG/WebP/PDF ≤ 4 pages, ≤ 10 Mo) → `201` upload ; `200` si le même document a déjà été envoyé (idempotent, hors quota) ; `429` + `Retry-After` si quota journalier atteint |
 | GET | `uploads/{id}` | `status` (`pending` → `reading` → `extracted` \| `error`), `error_message` (destiné à l'élève), exercices extraits. Aucune URL de fichier exposée |
-| GET | `uploads/{id}/events` | **SSE** : progression (`reading`, `extracted`, `generating`, `step_ready`, `done`, `error`) |
+| GET | `uploads/{id}/events` | **SSE** (`Accept: text/event-stream`) : suivi de l'extraction, un événement par statut (`pending`, `reading`, puis `extracted` \| `error` qui ferment le flux) ; `data` = l'upload comme `GET uploads/{id}` |
+| GET | `exercises/{id}/events` | **SSE** : suivi de la génération (`pending`, `generating`, puis `ready` \| `needs_review` \| `error` qui ferment le flux) ; `data` = le parcours comme `GET exercises/{id}` (l'événement `ready` porte le contenu) |
 | PATCH / DELETE | `extracted-exercises/{id}` | correction (`statement`, `subject`, `level`, `chapter`) / écarter un énoncé — refusé (`400`) une fois validé |
 | POST | `extracted-exercises/{id}/validate` | fige l'énoncé (matière et niveau requis) ; fichier d'origine supprimé quand tous les énoncés sont validés |
 | POST | `extracted-exercises/{id}/generate` | énoncé validé requis → `202` génération lancée ; `200` parcours existant ou repris du cache ; `400` matière non ouverte ; `429` quota journalier. Réponse = parcours (`id`, `generation_status`…) |
@@ -265,6 +266,8 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | POST | `attempts/{id}/hints` | `{step_id}` → `{hint, level, total}` (étape en cours uniquement) |
 | POST | `sync` | `{attempts: [{id, exercise, started_at, answers: [...]}]}` → statut par tentative et par réponse (cf. §5.2) |
 | GET | `progress` | `summary` (parcours faits, tentatives, score moyen, série de jours), `subjects`, `chapters` (maîtrise), `review_today` (cf. §5.3) |
+
+**Flux SSE** (`config/sse.py`) : l'état courant est envoyé dès la connexion, puis à chaque changement (lecture en base toutes les `SSE_POLL_SECONDS`) ; commentaire `: ping` toutes les `SSE_HEARTBEAT_SECONDS` ; fermeture après `SSE_MAX_SECONDS` (le client se reconnecte après `retry` = `SSE_RETRY_MS` et reçoit l'état courant), sur un statut final, ou par `event: gone` si l'objet a disparu. Le client ferme le flux sur un statut final. Auth : JWT Bearer comme le reste de l'API — l'`EventSource` du navigateur n'envoie pas d'en-tête, utiliser un client SSE basé sur `fetch` (jamais de jeton dans l'URL). Pas d'événement par étape : le parcours est généré et revérifié d'un bloc. Production : gunicorn `gthread`, un flux ouvert occupe un thread (capacité = `WEB_CONCURRENCY` × `GUNICORN_THREADS`).
 
 Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère son client TypeScript à partir de lui. Toute route doit avoir serializers et annotations drf-spectacular corrects.
 
@@ -285,7 +288,8 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - ✅ Moteurs de correction et revérification des parcours (`grading`).
 - ✅ Tentatives : démarrage, réponses corrigées avec feedback, indices, score, synchronisation hors-ligne idempotente.
 - ✅ Progression : maîtrise par chapitre, révision espacée par parcours, révision du jour, série de jours (`/api/progress/`).
-- ❌ SSE, défis.
+- ✅ Suivi en direct (SSE) de l'extraction et de la génération.
+- ❌ Défis.
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -310,7 +314,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
   - extraction Celery (`ingestion.tasks.extract_upload`, idempotente) : pages → JPEG ≤ 2048 px, orientation appliquée, **EXIF supprimés** ; correspondance de chapitre par `chapter_hint` (sinon conservé en texte) ; erreurs traduites en messages pour l'élève ;
   - correction / suppression / validation des énoncés (mêmes règles `ExerciseStatement` que le LLM) ;
   - fichier supprimé quand tous les énoncés sont validés, en cas d'erreur, ou après `UPLOAD_FILE_RETENTION_HOURS` (`manage.py purge_upload_files` / tâche `purge_expired_upload_files`).
-- [ ] Événements de progression en SSE.
+- [x] Suivi en direct en SSE : `uploads/{id}/events` et `exercises/{id}/events`, gunicorn en `gthread` — 2026-11-07. Si la charge l'exige : passer en ASGI (flux asynchrones, sans thread par connexion) ou notifier par Redis au lieu de lire la base.
 - [x] App `learning` : génération asynchrone (`learning.tasks.generate_exercise_task`, idempotente), un parcours par énoncé (relance si erreur), cache inter-élèves par `content_hash` (énoncé normalisé + matière + niveau), quota `GENERATION_DAILY_QUOTA` (copies du cache non comptées), matières ouvertes `GENERATION_SUBJECTS` ; API `exercises` — 2026-11-06.
 - [x] App `grading` : moteurs pour les 13 types V1 (texte normalisé, nombres FR/EN, équivalence symbolique SymPy sécurisée, chimie atomes + charges + électrons, unités), feedback par erreurs typiques, revérification post-génération intégrée à `learning` (`needs_review`, `review_notes`) — 2026-11-06.
 - [x] Endpoints tentatives / réponses / indices / sync (`learning.attempts`, §5.2) — 2026-11-06.
