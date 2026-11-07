@@ -52,11 +52,11 @@ class TestRequestGeneration:
         exercise = Exercise.objects.get()
         assert exercise.generation_status == Exercise.GenerationStatus.READY
         assert (exercise.owner, exercise.source, exercise.level, exercise.prompt_id) == (
-            user, extracted, "3e", "generation.v2"
+            user, extracted, "3e", "generation.v3"
         )
         assert exercise.title == "Variations d'une fonction du second degré"
         assert exercise.content["statement"] == STATEMENT
-        assert exercise.content["schema_version"] == exercise.schema_version == "1.0"
+        assert exercise.content["schema_version"] == exercise.schema_version == "1.1"
         assert exercise.content_hash == content_hash(STATEMENT, "maths", "3e")
 
     def test_requires_validated_statement(self, generate, user, fake_llm):

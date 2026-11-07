@@ -33,7 +33,7 @@ ACTIVITIES = {
     },
     "formula_input": {
         "type": "formula_input", "grading": "symbolic", "prompt": "Complète : $f'(x) = \\placeholder{}$",
-        "answer": {"expression": "2*x - 4", "variables": ["x"]},
+        "answer": {"expression": "2*x - 4", "variables": ["x"], "form": "any", "source": None},
     },
     "graph_points": {
         "type": "graph_points", "grading": "numeric", "prompt": "Place les points de la courbe.",

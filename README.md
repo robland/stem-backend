@@ -116,7 +116,7 @@ stem_learning_app/
 
 Règles :
 - Le serveur est **la source de vérité** ; un résultat calculé hors-ligne est recalculé à la synchronisation.
-- Après génération, le parcours est **revérifié** par `grading.verify.verify_exercise` (expressions lisibles, erreurs typiques ≠ bonne réponse, points sur la courbe, signe de la dérivée dans le tableau de variations, conservation des atomes et des charges, coefficients minimaux, conversions d'unités). Un problème déclenche une régénération ciblée (`GENERATION_ATTEMPTS` = 2 essais au total) puis `generation_status = "needs_review"` (contenu non servi, problèmes dans `Exercise.review_notes`, relecture via l'admin).
+- Après génération, le parcours est **revérifié** par `grading.verify.verify_exercise` (expressions lisibles, réponse attendue égale à `answer.source` et sous la forme `answer.form` — une réponse juste mais mal écrite est d'abord réécrite par SymPy depuis `answer.source` (`grading.verify.repair_forms`) —, erreurs typiques ≠ bonne réponse sauf erreur de forme, points sur la courbe, signe de la dérivée dans le tableau de variations, conservation des atomes et des charges, coefficients minimaux, conversions d'unités). Un problème déclenche une régénération ciblée (`GENERATION_ATTEMPTS` = 2 essais au total) puis `generation_status = "needs_review"` (contenu non servi, problèmes dans `Exercise.review_notes`, relecture via l'admin).
 
 ### 5.1 Règles de correction (`grading.engine.grade_step`) — à reproduire à l'identique côté client hors-ligne
 
@@ -128,7 +128,7 @@ Règles :
 | `fill_blanks` | `{blanks: [{id, text}]}` | chaque trou normalisé ∈ ses `accepted` ; `details.blanks` par trou |
 | `matching` | `{pairs: [{left_id, right_id}]}` | ensemble identique ; `details.pairs` par élément de gauche |
 | `ordering` | `{order: [id]}` | ordre identique |
-| `formula_input` | `{expression}` (ASCII, cf. ci-dessous) | équivalence symbolique sur les `answer.variables` |
+| `formula_input` | `{expression}` (ASCII, cf. ci-dessous) | équivalence symbolique sur les `answer.variables`, **puis** forme `answer.form` (cf. ci-dessous) ; `details.form = false` si seule la forme est fausse |
 | `graph_points` | `{points: [{x, y}]}` | chaque point attendu retrouvé à ± `tolerance` en x et en y, sans point en trop |
 | `graph_parameters` | `{values: [{name, value}]}` | chaque paramètre à ± `tolerance` |
 | `variation_table` | `{signs: [+\|-], arrows: [up\|down]}` | égalité ; `details.signs` / `details.arrows` |
@@ -139,8 +139,9 @@ Règles :
 - **Texte normalisé** : NFC, apostrophes typographiques → `'`, casse ignorée (`casefold`), espaces multiples réduits, ponctuation finale ` .;!?` retirée. **Les accents comptent.**
 - **Nombres** : virgule ou point décimal, espaces de milliers, `2,5×10^3`, `2.5e3`, signe `−` Unicode.
 - **Expressions** : ASCII ≤ 200 caractères ; `*` implicite (`2x`, `2(x+1)`, `xy` si x et y sont des variables) ; `^` ou `**` ; fonctions `sqrt sin cos tan exp ln log abs` ; constantes `pi`, `e` ; aucun autre identifiant ; exposants numériques ≤ 100. Équivalence par évaluation en 12 points aléatoires déterministes (tolérance relative 1e-8). Saisie filtrée par liste blanche avant SymPy (`parse_expr` repose sur `eval`).
+- **Forme des expressions** (`grading.forms`, sur l'écriture non évaluée de l'élève) : `any` = équivalence seule ; `expanded` = somme de monômes sans parenthèses, termes semblables regroupés, un coefficient par terme (`3x/2` permis, `2*3x`, `x*x` non) ; `factored` = produit (pas une somme au premier niveau), aucun facteur polynomial encore factorisable sur ℚ (`2(x^2 - 1)` non) ; `irreducible_fraction` = entier ou `p/q` avec q > 1 et pgcd(p, q) = 1 (`0.75` non). Réponse équivalente mais de forme fausse → fausse, feedback dédié.
 - **Formules chimiques** : éléments du tableau périodique, parenthèses, hydrates `·`, indices Unicode ; charge `^{2+}`, `^2+`, exposants Unicode `²⁺`, ou signe seul (`Na+`) ; électron `e-`.
-- **Feedback** : réponse fausse → `common_mistakes` correspondant (formules comparées symboliquement, nombres numériquement, sinon texte normalisé ; QCM par id ou contenu d'option), sinon feedback spécifique du moteur (ex. « Le nombre d'atomes de O n'est pas conservé »), sinon message générique.
+- **Feedback** : réponse fausse → `common_mistakes` correspondant (formules comparées symboliquement — mais une erreur typique **équivalente** à la réponse, donc une erreur de forme, n'est retenue que pour la même écriture ; nombres numériquement, sinon texte normalisé ; QCM par id ou contenu d'option), sinon feedback spécifique du moteur (forme, lecture de l'expression…) (ex. « Le nombre d'atomes de O n'est pas conservé »), sinon message générique.
 - Une réponse mal formée (mauvais type JSON, champ inconnu) est une erreur du client (`InvalidResponse` → HTTP 400), pas une réponse fausse.
 
 
@@ -173,11 +174,11 @@ Règles :
 ### 6.1 Texte riche
 Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX inline `$...$` / bloc `$$...$$` + chimie via `\ce{...}` (mhchem). **Pas de HTML** (risque XSS) — le prompt actuel qui génère du HTML doit être abandonné. Les backslashes LaTeX sont normaux (`\frac`) : le hack `//` actuel est **interdit**, les *structured outputs* garantissent l'échappement JSON.
 
-### 6.2 Structure d'un parcours (`schema_version: "1.0"`)
+### 6.2 Structure d'un parcours (`schema_version: "1.1"`)
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "title": "Variations d'une fonction du second degré",
   "statement": "Étudier les variations de $f(x) = x^2 - 4x + 3$.",
   "intuition": { "mental_image": "…", "example": "…" },
@@ -191,7 +192,7 @@ Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX in
         "type": "formula_input",
         "grading": "symbolic",
         "prompt": "Complète : $f'(x) = \\placeholder{}$",
-        "answer": { "expression": "2*x - 4", "variables": ["x"] }
+        "answer": { "expression": "2*x - 4", "variables": ["x"], "form": "any", "source": null }
       },
       "hints": ["…", "…", "…"],
       "common_mistakes": [ { "pattern": "2x + 4", "feedback": "Attention au signe de $-4x$." } ],
@@ -206,6 +207,7 @@ Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX in
 - Étapes : `id` = `s1`, `s2`… (1 à 10) ; `skill` en snake_case ; **exactement 3 indices** (relance, méthode, quasi-solution) ; 0 à 5 `common_mistakes` ; 0 à 5 `recall`.
 - Tous les champs sont toujours présents (`null` quand sans objet) : contrainte des *structured outputs* stricts. Pas d'objet à clés libres : les associations sont des listes.
 - Expressions (`answer.expression`, `function`) : syntaxe ASCII lisible par SymPy (`*` explicite, `^`, `sqrt()`, `pi`).
+- Historique : **1.1** ajoute `answer.form` et `answer.source` aux `formula_input` (migration `learning.0005` : `form = "any"`, `source = null` pour les parcours 1.0, comportement inchangé).
 
 ### 6.3 Types d'activités
 
@@ -219,7 +221,7 @@ Chaque activité porte `type`, `grading` et `prompt` (consigne, texte riche).
 | `fill_blanks` | toutes | `text` avec `{{1}}`…, `answer.blanks[{id, accepted[]}]` | normalized_text | V1 |
 | `matching` | toutes | `left[{id, content}]`, `right[…]`, `answer.pairs[{left_id, right_id}]` | exact | V1 |
 | `ordering` | toutes | `items[{id, content}]` (mélangés par le client), `answer.order[ids]` | exact | V1 |
-| `formula_input` | Maths, PC | `prompt` avec exactement un `\placeholder{}`, `answer.expression`, `answer.variables` | symbolic | V1 |
+| `formula_input` | Maths, PC | `prompt` avec exactement un `\placeholder{}`, `answer.expression`, `answer.variables`, `answer.form` (`any` / `expanded` / `factored` / `irreducible_fraction`) | symbolic | V1 |
 | `graph_points` | Maths, PC | `axes`, `points_to_place[x]`, `tolerance`, `answer.function`, `answer.points[{x, y}]` | numeric | V1 |
 | `graph_parameters` | Maths, PC | `axes`, `function` paramétrée (`a*x + b`), `sliders[{name, min, max, step, initial}]`, `tolerance`, `answer.values[{name, value}]` | numeric | V1 |
 | `variation_table` | Maths | `x_values` (texte riche), `answer.signs` (`+`/`-`), `answer.arrows` (`up`/`down`), un par intervalle, `answer.function` (optionnel) | exact | V1 |
@@ -335,7 +337,7 @@ Corrections issues de l'essai : `extraction.v2` / `generation.v2` (exemples de t
 
 À décider / à faire :
 - [x] **Modèle de génération** : `gpt-4.1` retenu (nettement plus fiable, ≈ 6× plus cher ; le cache entre élèves amortit les sujets récurrents). Réglable par `LLM_MODEL_GENERATION`.
-- [ ] Forme attendue des réponses : « développer et réduire » est aujourd'hui corrigé par équivalence symbolique, donc une forme non réduite est acceptée. Ajouter une contrainte de forme (`answer.form` : développée, factorisée, réduite) au contrat §6 (bump `schema_version`).
+- [x] Forme attendue des réponses : `answer.form` (`expanded`, `factored`, `irreducible_fraction`) ajouté au contrat (schéma 1.1, prompt `generation.v3`) ; une forme non réduite est refusée avec un feedback dédié. `answer.source` (expression de départ recopiée de l'énoncé) permet à la revérification de détecter un calcul faux du LLM : au 2e essai, `gpt-4.1` attendait `3x² + 10x + 8` pour `(2x+3)² − (x−1)(x+5)` (= `3x² + 8x + 14`).
 - [ ] Rejouer l'essai sur de vraies photos (manuscrit, mauvais éclairage) avant la mise en production.
 
 ### Phase 2 — V2

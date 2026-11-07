@@ -51,10 +51,10 @@ def test_each_activity_type_is_valid(name):
 
 def test_content_adds_statement_and_version():
     content = ExerciseContent.model_validate(
-        generated_exercise() | {"schema_version": "1.0", "statement": "Étudier $f$."}
+        generated_exercise() | {"schema_version": "1.1", "statement": "Étudier $f$."}
     )
 
-    assert content.schema_version == "1.0"
+    assert content.schema_version == "1.1"
 
 
 def test_committed_json_schema_is_up_to_date():
@@ -81,6 +81,8 @@ def test_committed_json_schema_is_up_to_date():
          "inexistant"),
         ("ordering", {"answer.order": ["i1"]}, "permutation"),
         ("formula_input", {"prompt": "Calcule $f'(x)$."}, "placeholder"),
+        ("formula_input", {"answer.form": "reduced"}, "form"),
+        ("formula_input", {"answer.form": "expanded"}, "answer.source est obligatoire"),
         ("graph_points", {"answer.points": [{"x": 0, "y": 3}]}, "un point par abscisse"),
         ("graph_points", {"axes": {"x_min": 5, "x_max": 1, "y_min": 0, "y_max": 1}}, "Bornes"),
         ("graph_parameters", {"answer.values": [{"name": "a", "value": 2}]}, "une valeur par curseur"),
@@ -159,7 +161,7 @@ def test_delimited_math_is_accepted(text):
 def test_stored_statement_stays_lenient():
     """L'énoncé stocké est celui validé par l'élève, qui peut taper « x^2 » sans $...$."""
     content = ExerciseContent.model_validate(
-        generated_exercise() | {"schema_version": "1.0", "statement": "Résoudre x^2 = 4."}
+        generated_exercise() | {"schema_version": "1.1", "statement": "Résoudre x^2 = 4."}
     )
 
     assert content.statement == "Résoudre x^2 = 4."

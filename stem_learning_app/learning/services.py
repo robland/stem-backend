@@ -8,7 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 from pydantic import ValidationError
 
-from grading.verify import verify_exercise
+from grading.verify import repair_forms, verify_exercise
 from ingestion.services import seconds_until_quota_reset, start_of_today, stuck_before
 from llm.exceptions import LLMError, LLMRefusal
 from llm.schemas import SCHEMA_VERSION, ExerciseContent
@@ -153,6 +153,8 @@ def generate_and_verify(statement, subject_code, level, chapter=""):
             statement=statement, subject=subject_code, level=level, chapter=chapter, corrections=issues,
         )
         content = build_content(result.output, statement)
+        for repair in repair_forms(content):
+            logger.info("Réponse attendue réécrite sous la forme exigée : %s", repair)
         issues = verify_exercise(content)
         if not issues:
             break

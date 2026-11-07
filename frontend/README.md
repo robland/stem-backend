@@ -145,7 +145,7 @@ frontend/
 
 - Utiliser **uniquement** `packages/api-client`, régénéré depuis `/api/schema/` du backend (`pnpm api:generate`). Pas d'appels `fetch` écrits à la main.
 - Auth : access token JWT en mémoire ; refresh en cookie httpOnly (web) / `expo-secure-store` (mobile, refresh envoyé dans le body) ; rafraîchissement automatique sur 401.
-- Correction hors-ligne (`packages/grading`) : reproduire **exactement** les règles du backend README §5.1 (formats de réponse, normalisation du texte et des nombres, syntaxe des expressions, formules chimiques) ; des cas de test partagés seront exportés depuis `grading/tests`.
+- Correction hors-ligne (`packages/grading`) : reproduire **exactement** les règles du backend README §5.1 (formats de réponse, normalisation du texte et des nombres, syntaxe des expressions, forme des expressions `answer.form`, formules chimiques) ; des cas de test partagés seront exportés depuis `grading/tests`.
 - Progression d'analyse : SSE `GET /api/uploads/{id}/events` (fallback polling `GET /api/uploads/{id}` toutes les 3 s si SSE indisponible).
 - Uploads : l'API n'expose jamais le fichier envoyé → **garder la photo locale** pour l'afficher à côté de l'énoncé pendant la correction. Réenvoyer le même fichier est sans risque (réponse `200`, même upload). Sur `429`, afficher le quota atteint et l'heure de `Retry-After`. Compresser avant envoi (≤ 10 Mo, côté long ~2048 px suffit).
 - Si un endpoint nécessaire n'existe pas encore : **ne pas l'inventer côté front**, le signaler et l'ajouter à l'état d'avancement du backend.
@@ -161,7 +161,7 @@ frontend/
 - [ ] Initialiser le monorepo (pnpm, Turborepo, TS strict, ESLint, Prettier, Vitest).
 - [ ] `packages/ui` : tokens (couleurs, typo, espacements, clair/sombre), composants de base.
 - [ ] `packages/api-client` : génération depuis l'OpenAPI + hooks TanStack Query + gestion du refresh.
-- [ ] `packages/content-schema` : types Zod du schéma `1.0`, **générés** depuis `stem_learning_app/schemas/exercise-content.schema.json` (ex. json-schema-to-zod) plutôt qu'écrits à la main. Le contenu public (`GET /api/exercises/{id}`) n'a ni `activity.answer`, ni `common_mistakes`, ni `explanation`, et seulement 2 indices sur 3.
+- [ ] `packages/content-schema` : types Zod du schéma `1.1`, **générés** depuis `stem_learning_app/schemas/exercise-content.schema.json` (ex. json-schema-to-zod) plutôt qu'écrits à la main. Le contenu public (`GET /api/exercises/{id}`) n'a ni `activity.answer`, ni `common_mistakes`, ni `explanation`, et seulement 2 indices sur 3.
 - [ ] Maquettes validées : onboarding, accueil, scanner, résolution, bilan, progrès.
 - [ ] Auth + onboarding (téléphone, pseudo, niveau/série, matières).
 - [ ] Scanner web : upload (fichier/caméra), recadrage, compression, suivi SSE, choix d'exercice, édition de l'énoncé avec aperçu LaTeX.

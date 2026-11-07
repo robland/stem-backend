@@ -48,7 +48,7 @@ def test_detail_hides_answers(auth_client, user):
 
     data = auth_client.get(f"{URL}{exercise.id}/").data
 
-    assert (data["subject"], data["exam"], data["schema_version"]) == ("maths", "BEPC", "1.0")
+    assert (data["subject"], data["exam"], data["schema_version"]) == ("maths", "BEPC", "1.1")
     activity = data["content"]["steps"][0]["activity"]
     assert activity["options"] and "answer" not in activity
     assert "explanation" not in data["content"]["steps"][0]

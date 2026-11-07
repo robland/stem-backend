@@ -103,13 +103,14 @@ class TestGenerateExercise:
 
         result = self.generate()
 
-        assert result.prompt_id == "generation.v2"
+        assert result.prompt_id == "generation.v3"
         prompt = fake_llm.calls[0]["prompt"]
         assert fake_llm.calls[0]["task"] == "generation"
         assert "élève de 3e qui prépare le BEPC" in prompt.system
         assert "sous la forme {{1}}, {{2}}" in prompt.system
         assert "$f(0) =$ {{1}} et $f(2) =$ {{2}}" in prompt.system
         assert "au moins une étape par question" in prompt.system
+        assert "« expanded » pour développer et réduire" in prompt.system
         assert "Chapitre : Fonctions" in prompt.user
         assert "$f(x) = x^2 - 4x + 3$" in prompt.user
         assert "invalide" not in prompt.user

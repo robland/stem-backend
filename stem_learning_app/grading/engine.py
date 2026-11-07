@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from llm.schemas.exercise import Step
 
 from .chemistry import FormulaError, balance_report, is_simplest, normalize_formula, parse_formula
+from .forms import form_issue
 from .symbolic import ExpressionError, equivalent, parse
 from .text import close_enough, normalize_text, parse_number
 
@@ -141,10 +142,11 @@ def grade_step(step, response):
         raise InvalidResponse(f"Réponse invalide pour une activité {activity.type}.") from e
 
     result = GRADERS[activity.type](activity, parsed)
-    if not result.is_correct and result.feedback is None:
-        mistake = _matching_mistake(step, parsed)
-        return GradeResult(False, mistake or FEEDBACK_WRONG, result.details)
-    return result
+    if result.is_correct:
+        return result
+    # Une erreur typique prévue explique mieux que le feedback générique du moteur.
+    mistake = _matching_mistake(step, parsed)
+    return GradeResult(False, mistake or result.feedback or FEEDBACK_WRONG, result.details)
 
 
 # --- Correcteurs ------------------------------------------------------------------
@@ -198,7 +200,12 @@ def _formula_input(activity, response):
     except ExpressionError as e:
         return GradeResult(False, str(e))
     expected = parse(activity.answer.expression, variables)
-    return GradeResult(equivalent(given, expected, variables))
+    if not equivalent(given, expected, variables):
+        return GradeResult(False)
+    issue = form_issue(response.expression, activity.answer.form, variables)
+    if issue:
+        return GradeResult(False, issue, details={"form": False})
+    return GradeResult(True)
 
 
 def _graph_points(activity, response):
@@ -292,7 +299,13 @@ def _same_as_pattern(activity, response, pattern):
     if activity.type == "formula_input":
         try:
             variables = activity.answer.variables
-            return equivalent(parse(response.expression, variables), parse(pattern, variables), variables)
+            target = parse(pattern, variables)
+            if not equivalent(parse(response.expression, variables), target, variables):
+                return False
+            if activity.answer.form != "any" and equivalent(target, parse(activity.answer.expression, variables), variables):
+                # Erreur de forme (ex. non réduite) : toute forme équivalente correspondrait, on exige la même écriture.
+                return parse(response.expression, variables, evaluate=False) == parse(pattern, variables, evaluate=False)
+            return True
         except ExpressionError:
             return False
     if activity.type == "short_answer":

@@ -236,6 +236,27 @@
           "title": "Expression",
           "type": "string"
         },
+        "form": {
+          "enum": [
+            "any",
+            "expanded",
+            "factored",
+            "irreducible_fraction"
+          ],
+          "title": "Form",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source"
+        },
         "variables": {
           "items": {
             "type": "string"
@@ -246,7 +267,9 @@
       },
       "required": [
         "expression",
-        "variables"
+        "variables",
+        "form",
+        "source"
       ],
       "title": "FormulaAnswer",
       "type": "object"
@@ -1154,7 +1177,7 @@
       "type": "array"
     },
     "schema_version": {
-      "const": "1.0",
+      "const": "1.1",
       "title": "Schema Version",
       "type": "string"
     },

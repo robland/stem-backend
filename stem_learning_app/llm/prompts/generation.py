@@ -84,3 +84,25 @@ Chapitre : {{ chapter }}
 {{ statement }}
 {{ structure }}{{ correction }}""",
 )
+
+# v3 : forme exigée des expressions (answer.form, schema_version 1.1) ; sinon identique à v2.
+_FORMULA_V2 = "answer.variables = les variables utilisées.\n"
+_FORMULA_V3 = (
+    "answer.variables = les variables utilisées ; answer.form = la forme exigée par la question : "
+    "« expanded » pour développer et réduire (somme de termes, sans parenthèses, termes semblables regroupés), "
+    "« factored » pour factoriser (produit de facteurs, factorisation complète), "
+    "« irreducible_fraction » pour un résultat en fraction irréductible (ex. 3/4), sinon « any ». "
+    "answer.expression est écrite sous cette forme ; une forme équivalente mais non conforme est une erreur typique "
+    "utile (ex. pattern « x^2 + 3x + 2x + 6 » pour développer $(x + 2)(x + 3)$, avec un feedback sur la réduction). "
+    "answer.source = l'expression de départ recopiée telle quelle de l'énoncé, en ASCII (ex. « (x + 2)*(x + 3) », "
+    "« (2*x + 3)^2 - (x - 1)*(x + 5) ») : obligatoire quand answer.form n'est pas « any », sinon null ; "
+    "answer.expression doit lui être égale, vérifie ton calcul terme à terme.\n"
+)
+assert GENERATION_V2.system.count(_FORMULA_V2) == 1
+
+GENERATION_V3 = Prompt(
+    name="generation",
+    version=3,
+    system=GENERATION_V2.system.replace(_FORMULA_V2, _FORMULA_V3),
+    user=GENERATION_V2.user,
+)

@@ -13,6 +13,7 @@ from sympy import Symbol, diff, oo
 from llm.statement import count_questions
 
 from .chemistry import FormulaError, balance_report, is_simplest, parse_formula
+from .forms import form_issue, rewrite
 from .symbolic import ExpressionError, equivalent, evaluate, parse
 from .units import UnitError, convert
 
@@ -27,6 +28,32 @@ def verify_exercise(exercise):
         if checker:
             issues += [f"steps.{index}.activity ({step.activity.type}) : {issue}" for issue in checker(step)]
     return issues
+
+
+def repair_forms(exercise):
+    """Réécrit sous la forme exigée les réponses attendues justes mais mal écrites (ex. non réduites).
+
+    Modifie `exercise` en place ; renvoie les réparations faites. Une réponse fausse n'est pas
+    réparée : les indices et la correction rédigée reposent sur le même calcul, il faut régénérer.
+    """
+    repairs = []
+    for index, step in enumerate(exercise.steps):
+        activity = step.activity
+        if activity.type != "formula_input" or activity.answer.form == "any" or not activity.answer.source:
+            continue
+        answer = activity.answer
+        try:
+            expected = parse(answer.expression, answer.variables)
+            if (not form_issue(answer.expression, answer.form, answer.variables)
+                    or not equivalent(parse(answer.source, answer.variables), expected, answer.variables)):
+                continue
+            rewritten = rewrite(answer.source, answer.form, answer.variables)
+        except ExpressionError:
+            continue
+        if rewritten:
+            repairs.append(f"steps.{index} : « {answer.expression} » → « {rewritten} »")
+            answer.expression = rewritten
+    return repairs
 
 
 def _coverage(exercise):
@@ -48,9 +75,22 @@ def _formula_input(step):
     except ExpressionError as e:
         return [f"answer.expression illisible ({e})"]
     issues = []
+    if answer.source:
+        try:
+            if not equivalent(parse(answer.source, answer.variables), expected, answer.variables):
+                issues.append(
+                    f"answer.expression « {answer.expression} » n'est pas égale à l'expression de départ "
+                    f"« {answer.source} » : refaire le calcul"
+                )
+        except ExpressionError as e:
+            issues.append(f"answer.source illisible ({e})")
+    if form_issue(answer.expression, answer.form, answer.variables):
+        issues.append(f"answer.expression « {answer.expression} » n'est pas sous la forme {answer.form}")
     for mistake in step.common_mistakes:
         try:
-            if equivalent(parse(mistake.pattern, answer.variables), expected, answer.variables):
+            # Une forme équivalente mais non conforme (ex. non réduite) est une erreur typique légitime.
+            if (equivalent(parse(mistake.pattern, answer.variables), expected, answer.variables)
+                    and not form_issue(mistake.pattern, answer.form, answer.variables)):
                 issues.append(f"l'erreur typique « {mistake.pattern} » équivaut à la bonne réponse")
         except ExpressionError:
             continue

@@ -1,4 +1,4 @@
-"""Contrat de contenu d'un parcours (README §6), schema_version 1.0.
+"""Contrat de contenu d'un parcours (README §6), schema_version 1.1.
 
 Le même modèle sert de sortie structurée au LLM (`GeneratedExercise`) et de contenu
 stocké (`ExerciseContent`). Contraintes du mode strict d'OpenAI : tous les champs
@@ -13,7 +13,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 
 from .rich_text import LLMRichText, RichText, max_length
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 
 Id = Annotated[str, max_length(20)]
 ShortText = Annotated[str, max_length(200)]
@@ -200,6 +200,12 @@ class OrderingActivity(Strict):
 class FormulaAnswer(Strict):
     expression: Expression
     variables: list[Annotated[str, max_length(10)]]
+    # Forme exigée en plus de l'équivalence (« développer et réduire », « factoriser »…) ;
+    # contrôlée par grading.forms, et answer.expression doit elle-même la respecter.
+    form: Literal["any", "expanded", "factored", "irreducible_fraction"]
+    # Expression de départ recopiée de l'énoncé (ex. « (2x+3)^2 - (x-1)(x+5) ») : la revérification
+    # contrôle que answer.expression lui est équivalente. Obligatoire dès qu'une forme est exigée.
+    source: Expression | None
 
 
 class FormulaInputActivity(Strict):
@@ -213,6 +219,11 @@ class FormulaInputActivity(Strict):
     def check_prompt(self):
         if self.prompt.count(PLACEHOLDER) != 1:
             raise ValueError(f"prompt doit contenir exactement un {PLACEHOLDER}.")
+        if self.answer.form != "any" and not (self.answer.source or "").strip():
+            raise ValueError(
+                "answer.source est obligatoire quand answer.form n'est pas « any » : recopier l'expression de "
+                "départ de l'énoncé (ex. « (2*x + 3)^2 - (x - 1)*(x + 5) »)."
+            )
         return self
 
 
@@ -463,5 +474,5 @@ class GeneratedExercise(Strict):
 class ExerciseContent(GeneratedExercise):
     """Contenu stocké dans Exercise.content."""
 
-    schema_version: Literal["1.0"]
+    schema_version: Literal["1.1"]
     statement: RichText

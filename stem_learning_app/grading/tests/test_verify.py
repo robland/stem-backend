@@ -81,7 +81,7 @@ def test_does_not_modify_content():
 class TestCoverage:
     def content(self, statement, steps):
         return ExerciseContent.model_validate(
-            generated_exercise(*steps) | {"schema_version": "1.0", "statement": statement}
+            generated_exercise(*steps) | {"schema_version": "1.1", "statement": statement}
         )
 
     def test_one_step_per_question_is_required(self):

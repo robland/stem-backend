@@ -38,8 +38,11 @@ class ExpressionError(ValueError):
     """Expression illisible ; le message s'adresse à l'élève."""
 
 
-def parse(text, variables):
-    """Texte ASCII (`2(x+1)`, `x^2 - 4x`, `sqrt(x)`) → expression SymPy en les seules `variables`."""
+def parse(text, variables, evaluate=True):
+    """Texte ASCII (`2(x+1)`, `x^2 - 4x`, `sqrt(x)`) → expression SymPy en les seules `variables`.
+
+    `evaluate=False` garde l'écriture de l'élève (`2(x+1)` reste un produit) pour contrôler la forme.
+    """
     text = (text or "").strip().replace("−", "-").replace("×", "*").replace("²", "^2").replace("³", "^3")
     text = re.sub(r"(?<=\d),(?=\d)", ".", text)
     if not text:
@@ -66,7 +69,7 @@ def parse(text, variables):
     if not hasattr(expr, "atoms"):
         raise ExpressionError("Expression illisible.")
     _check_exponents(expr)
-    return expr.doit()
+    return expr.doit() if evaluate else expr
 
 
 def _check_exponents(expr):
