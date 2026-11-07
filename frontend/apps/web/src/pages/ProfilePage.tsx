@@ -1,3 +1,4 @@
+import type { FormulaInputMode } from "@stem/activities";
 import { useLogout, useMe, useUpdateMe, type Level, type Me } from "@stem/api-client";
 import { Alert, Button, Card, ChoiceGroup, Field, Input, Select, Spinner } from "@stem/ui";
 import { useForm } from "react-hook-form";
@@ -114,6 +115,16 @@ function PreferencesCard() {
         options={(Object.keys(t.profile.themes) as Theme[]).map((value) => ({
           value,
           label: t.profile.themes[value],
+        }))}
+      />
+      <ChoiceGroup<FormulaInputMode>
+        legend={t.profile.formulaInput}
+        columns={2}
+        value={prefs.formulaInput}
+        onChange={(formulaInput) => setPreferences({ formulaInput })}
+        options={(Object.keys(t.profile.formulaInputs) as FormulaInputMode[]).map((value) => ({
+          value,
+          ...t.profile.formulaInputs[value],
         }))}
       />
       <label className="min-h-touch flex cursor-pointer items-start gap-3">

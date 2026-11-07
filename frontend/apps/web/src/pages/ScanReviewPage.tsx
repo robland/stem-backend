@@ -195,7 +195,7 @@ function ExerciseEditor({
     try {
       if (!locked) await validate.mutateAsync(exercise.id);
       const created = await generate.mutateAsync(exercise.id);
-      navigate(paths.exercise(created.id, exercise.id));
+      navigate(paths.exercise(created.id, { enonce: exercise.id }));
     } catch (error) {
       setProblem(quotaAwareMessage(error));
     }

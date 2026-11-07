@@ -63,7 +63,7 @@ describe("scanner : envoi", () => {
     const router = renderApp("/scanner", { authenticated: true });
 
     const pdf = new File(["%PDF-1.4"], "fiche.pdf", { type: "application/pdf" });
-    await userEvent.upload(screen.getByLabelText("Importer une photo ou un PDF"), pdf);
+    await userEvent.upload(await screen.findByLabelText("Importer une photo ou un PDF"), pdf);
     expect(screen.getByText("PDF prêt à envoyer : fiche.pdf")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
 
@@ -77,7 +77,7 @@ describe("scanner : envoi", () => {
     const calls = mockApi(() => undefined);
     renderApp("/scanner", { authenticated: true });
     const doc = new File(["x"], "notes.docx", { type: "application/msword" });
-    await userEvent.upload(screen.getByLabelText("Importer une photo ou un PDF"), doc, {
+    await userEvent.upload(await screen.findByLabelText("Importer une photo ou un PDF"), doc, {
       applyAccept: false,
     });
     expect(await screen.findByText(/Format non pris en charge/)).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe("scanner : envoi", () => {
     );
     renderApp("/scanner", { authenticated: true });
     await userEvent.upload(
-      screen.getByLabelText("Importer une photo ou un PDF"),
+      await screen.findByLabelText("Importer une photo ou un PDF"),
       new File(["%PDF"], "a.pdf", { type: "application/pdf" }),
     );
     await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));

@@ -1,7 +1,7 @@
-import { RichText } from "@stem/activities";
 import { ingestionKeys, useExerciseLive, useGenerate, type ExerciseDetail } from "@stem/api-client";
 import { parsePublicContent } from "@stem/content-schema";
 import { Alert, Button, Card, Spinner } from "@stem/ui";
+import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Lightbulb } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -9,21 +9,45 @@ import { errorMessage } from "@/lib/errors";
 import { quotaAwareMessage } from "@/lib/quota";
 import { paths } from "@/paths";
 import { t } from "@/strings/fr";
+import { Reader } from "./reader/Reader";
 
-/** Parcours : préparation suivie en direct, puis (prochaine étape) le lecteur. */
+/** Parcours : préparation suivie en direct, puis le lecteur. */
 export function ExercisePage() {
   const { exerciseId = "" } = useParams();
   const [search] = useSearchParams();
   const extractedId = search.get("enonce");
   const exercise = useExerciseLive(exerciseId);
 
-  if (exercise.isError) return <Alert>{errorMessage(exercise.error)}</Alert>;
+  if (exercise.isError)
+    return (
+      <Padded>
+        <Alert>{errorMessage(exercise.error)}</Alert>
+      </Padded>
+    );
   const data = exercise.data;
   if (!data || data.generation_status === "pending" || data.generation_status === "generating")
-    return <Preparing />;
-  if (data.generation_status === "ready") return <Ready exercise={data} />;
-  return <Failed exercise={data} extractedId={extractedId} />;
+    return (
+      <Padded>
+        <Preparing />
+      </Padded>
+    );
+  if (data.generation_status === "ready") {
+    const content = parsePublicContent(data.content);
+    if (content.ok) return <Reader exercise={data} content={content.data} />;
+    return (
+      <Padded>
+        <Alert>{t.reader.invalidContent}</Alert>
+      </Padded>
+    );
+  }
+  return (
+    <Padded>
+      <Failed exercise={data} extractedId={extractedId} />
+    </Padded>
+  );
 }
+
+const Padded = ({ children }: { children: ReactNode }) => <div className="px-4 py-6">{children}</div>;
 
 function Preparing() {
   return (
@@ -58,28 +82,6 @@ function Preparing() {
   );
 }
 
-function Ready({ exercise }: { exercise: ExerciseDetail }) {
-  const content = parsePublicContent(exercise.content);
-  return (
-    <div className="flex flex-col gap-5">
-      <header>
-        <p className="text-success font-semibold">{t.exercise.ready}</p>
-        <h1 className="text-2xl font-bold">{exercise.title}</h1>
-        {content.ok ? <p className="text-muted">{t.exercise.stepsCount(content.data.steps.length)}</p> : null}
-      </header>
-      {content.ok ? (
-        <Card className="text-base leading-relaxed">
-          <RichText text={content.data.statement} />
-        </Card>
-      ) : null}
-      <Alert tone="info">{t.exercise.readerSoon}</Alert>
-      <Button asChild variant="secondary" size="lg">
-        <Link to={paths.home}>{t.exercise.backHome}</Link>
-      </Button>
-    </div>
-  );
-}
-
 function Failed({ exercise, extractedId }: { exercise: ExerciseDetail; extractedId: string | null }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -96,7 +98,7 @@ function Failed({ exercise, extractedId }: { exercise: ExerciseDetail; extracted
             (old) => old && { ...old, ...created },
           );
         } else {
-          navigate(paths.exercise(created.id, extractedId), { replace: true });
+          navigate(paths.exercise(created.id, { enonce: extractedId }), { replace: true });
         }
       },
     });

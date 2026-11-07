@@ -3,8 +3,13 @@ export const paths = {
   challenges: "/defis",
   scan: "/scanner",
   scanUpload: (uploadId: string) => `/scanner/${uploadId}`,
-  exercise: (exerciseId: string, extractedId?: string) =>
-    `/parcours/${exerciseId}${extractedId ? `?enonce=${extractedId}` : ""}`,
+  /** `enonce` : énoncé d'origine (relancer la génération) ; `tentative` : tentative à reprendre. */
+  exercise: (exerciseId: string, query: { enonce?: string; tentative?: string } = {}) => {
+    const search = new URLSearchParams(
+      Object.entries(query).filter(([, v]) => v) as [string, string][],
+    ).toString();
+    return `/parcours/${exerciseId}${search ? `?${search}` : ""}`;
+  },
   progress: "/progres",
   profile: "/profil",
   login: "/connexion",

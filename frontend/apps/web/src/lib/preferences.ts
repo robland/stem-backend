@@ -1,5 +1,6 @@
 // Préférences locales à l'appareil (aucune n'est envoyée à l'API) : apparence, police, et les choix
 // d'onboarding que l'API ne stocke pas (matières, objectif) — décision du porteur du projet, 2026-11-07.
+import type { FormulaInputMode } from "@stem/activities";
 import type { SubjectCode } from "@stem/api-client";
 import { useSyncExternalStore } from "react";
 import type { Goal } from "@/strings/fr";
@@ -11,10 +12,18 @@ export type Preferences = {
   dyslexicFont: boolean;
   subjects: SubjectCode[];
   goal: Goal | null;
+  /** Deux saisies de formules en évaluation (décision à prendre, 2026-11-07). */
+  formulaInput: FormulaInputMode;
 };
 
 const KEY = "stem.preferences";
-const DEFAULTS: Preferences = { theme: "system", dyslexicFont: false, subjects: [], goal: null };
+const DEFAULTS: Preferences = {
+  theme: "system",
+  dyslexicFont: false,
+  subjects: [],
+  goal: null,
+  formulaInput: "simple",
+};
 
 function read(): Preferences {
   try {

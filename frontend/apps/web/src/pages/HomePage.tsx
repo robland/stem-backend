@@ -47,12 +47,15 @@ export function HomePage() {
         <ul className="flex flex-col gap-2">
           {review.map((item) => (
             <li key={item.exercise.id}>
-              <Card className="flex items-center justify-between gap-3">
+              <Link
+                to={paths.exercise(item.exercise.id, { tentative: item.attempt ?? undefined })}
+                className="border-border bg-surface hover:bg-surface-2 min-h-touch flex items-center justify-between gap-3 rounded-xl border p-4"
+              >
                 <span className="font-semibold">{item.exercise.title}</span>
                 <span className="bg-surface-2 text-muted shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold">
                   {item.reason === "to_finish" ? t.home.toFinish : t.home.toReview}
                 </span>
-              </Card>
+              </Link>
             </li>
           ))}
         </ul>
