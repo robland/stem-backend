@@ -41,7 +41,9 @@ Object.keys(defs).sort().forEach(visit);
 
 const isNull = (s) => s.type === "null";
 const discriminator = (members) =>
-  members.every((m) => m.$ref && defs[refName(m.$ref)]?.properties?.type?.const !== undefined) ? "type" : null;
+  members.every((m) => m.$ref && defs[refName(m.$ref)]?.properties?.type?.const !== undefined)
+    ? "type"
+    : null;
 
 function zod(s) {
   if (s.$ref) return refName(s.$ref);

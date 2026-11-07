@@ -155,7 +155,7 @@ frontend/
 ## 7. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-07 — Phase 1 web démarrée (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding ; 44 tests verts.
+> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner complet jusqu'à la préparation du parcours ; 77 tests verts.
 
 ### Lancer le frontend
 
@@ -186,8 +186,13 @@ Après un changement de dépendances : `docker compose run --rm --no-deps fronte
 - [x] `packages/content-schema` : Zod généré depuis le JSON Schema `1.1`, variantes publiques (`ExerciseContentPublic`), `parseActivity` (type inconnu / invalide sans crash), fixtures miroir de `llm/tests/factories.py` — 2026-11-07.
 - [ ] Maquettes validées : onboarding, accueil, scanner, résolution, bilan, progrès.
 - [x] Auth + onboarding (téléphone, pseudo, mot de passe → classe/série → matières → objectif), session restaurée au chargement, profil (pseudo, classe, série, thème, police dyslexie, déconnexion) — 2026-11-07. Navigation 5 onglets responsive (barre en bas sur mobile, latérale ≥ `lg`). Accueil minimal en attendant sa maquette.
-- [ ] Scanner web : upload (fichier/caméra), recadrage, compression, suivi SSE, choix d'exercice, édition de l'énoncé avec aperçu LaTeX.
-- [ ] Lecteur de parcours : intuition, rappels, étapes, indices, feedback, bilan.
+- [x] Scanner web — 2026-11-07 :
+  - photo (caméra arrière via `capture`) ou import photo/PDF ; recadrage au doigt ou au clavier, rotation, réduction à 1 600 px de côté long et JPEG 0,8 (EXIF supprimés par le réencodage) ; PDF envoyé tel quel (≤ 10 Mo) ;
+  - suivi de la lecture puis de la génération en direct (`followEvents`, SSE par fetch avec Bearer, reconnexion, repli en polling 3 s) ; le flux ne démarre qu'après le premier GET (sinon une réponse GET plus ancienne écrasait un événement reçu) ;
+  - onglets par exercice trouvé, énoncé modifiable avec aperçu KaTeX en direct, matière / classe / chapitre (chapitre lu sur la feuille affiché), écarter, puis correction → validation → génération → écran de préparation (relance si échec, quota avec heure de reprise) ;
+  - photo gardée **en mémoire** à côté de l'énoncé (perdue au rechargement : persistance avec `packages/offline`).
+- [x] `packages/activities` : `RichText` (texte + `$…$` / `$$…$$` + `\ce{}`), KaTeX et mhchem chargés à la demande (≈ 86 kB gzip hors bundle initial), jamais de HTML interprété — 2026-11-07.
+- [ ] Lecteur de parcours : intuition, rappels, étapes, indices, feedback, bilan. (Pour l'instant, `/parcours/:id` affiche le parcours prêt : titre, nombre d'étapes, énoncé.)
 - [ ] Renderers V1 communs : `mcq`, `true_false`, `short_answer`, `fill_blanks`, `matching`, `ordering`.
 - [ ] Renderers Maths : `formula_input` (MathLive), `graph_points` & `graph_parameters` (courbe animée), `variation_table`.
 - [ ] Renderers PC : `chem_balance`, `chem_formula`, `unit_conversion`.

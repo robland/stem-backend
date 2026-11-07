@@ -1,5 +1,11 @@
 // Contenus valides pour les tests et les démos, miroir de `stem_learning_app/llm/tests/factories.py`.
-import { SCHEMA_VERSION, type Activity, type ActivityType, type ExerciseContent, type Step } from "./generated/content.gen";
+import {
+  SCHEMA_VERSION,
+  type Activity,
+  type ActivityType,
+  type ExerciseContent,
+  type Step,
+} from "./generated/content.gen";
 
 export const ACTIVITIES = {
   mcq: {
@@ -133,7 +139,11 @@ export const ACTIVITIES = {
   },
 } satisfies { [K in ActivityType]: Extract<Activity, { type: K }> };
 
-export function step(id = "s1", activity: ActivityType = "formula_input", overrides: Partial<Step> = {}): Step {
+export function step(
+  id = "s1",
+  activity: ActivityType = "formula_input",
+  overrides: Partial<Step> = {},
+): Step {
   return {
     id,
     objective: "Calculer la dérivée",
@@ -146,15 +156,16 @@ export function step(id = "s1", activity: ActivityType = "formula_input", overri
   };
 }
 
-export function exerciseContent(steps: Step[] = [], overrides: Partial<ExerciseContent> = {}): ExerciseContent {
+export function exerciseContent(
+  steps: Step[] = [],
+  overrides: Partial<ExerciseContent> = {},
+): ExerciseContent {
   return {
     schema_version: SCHEMA_VERSION,
     title: "Variations d'une fonction du second degré",
     statement: "Étudier les variations de $f(x) = x^2 - 4x + 3$.",
     intuition: { mental_image: "Une colline à l'envers.", example: "Le trajet d'un ballon." },
-    recall: [
-      { kind: "formula", content: "$(x^n)' = n x^{n-1}$", explanation: "Dérivée d'une puissance." },
-    ],
+    recall: [{ kind: "formula", content: "$(x^n)' = n x^{n-1}$", explanation: "Dérivée d'une puissance." }],
     steps: steps.length ? steps : [step("s1"), step("s2", "variation_table")],
     summary: { key_takeaway: "Le signe de $f'$ donne les variations de $f$." },
     ...overrides,

@@ -73,7 +73,9 @@ export const Card = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<"div">>(
   { className, ...props },
   ref,
 ) {
-  return <div ref={ref} className={cn("rounded-xl border border-border bg-surface p-4", className)} {...props} />;
+  return (
+    <div ref={ref} className={cn("border-border bg-surface rounded-xl border p-4", className)} {...props} />
+  );
 });
 
 const fieldControl =
@@ -115,12 +117,12 @@ export function Field({ label, error, hint, className, children }: FieldProps) {
       </label>
       {children({ id, describedBy, invalid: Boolean(error) })}
       {hint ? (
-        <p id={hintId} className="text-sm text-muted">
+        <p id={hintId} className="text-muted text-sm">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} role="alert" className="text-sm font-medium text-danger">
+        <p id={errorId} role="alert" className="text-danger text-sm font-medium">
           {error}
         </p>
       ) : null}
@@ -153,7 +155,9 @@ export function ChoiceGroup<T extends string>(props: ChoiceGroupProps<T>) {
       props.onChange(v);
     }
   };
-  const grid = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-2 sm:grid-cols-4" }[columns];
+  const grid = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-2 sm:grid-cols-4" }[
+    columns
+  ];
   return (
     <fieldset className={cn("flex flex-col gap-2", className)} aria-invalid={Boolean(error) || undefined}>
       <legend className="mb-2 text-sm font-semibold">{legend}</legend>
@@ -162,8 +166,8 @@ export function ChoiceGroup<T extends string>(props: ChoiceGroupProps<T>) {
           <label
             key={option.value}
             className={cn(
-              "flex min-h-touch cursor-pointer flex-col justify-center rounded-lg border-2 border-border bg-surface px-3 py-2 transition-colors",
-              "has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-ring",
+              "min-h-touch border-border bg-surface flex cursor-pointer flex-col justify-center rounded-lg border-2 px-3 py-2 transition-colors",
+              "has-[:focus-visible]:outline-ring has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px]",
               isChecked(option.value) && "border-primary bg-primary-soft",
             )}
           >
@@ -176,12 +180,12 @@ export function ChoiceGroup<T extends string>(props: ChoiceGroupProps<T>) {
               className="sr-only"
             />
             <span className="font-semibold">{option.label}</span>
-            {option.description ? <span className="text-sm text-muted">{option.description}</span> : null}
+            {option.description ? <span className="text-muted text-sm">{option.description}</span> : null}
           </label>
         ))}
       </div>
       {error ? (
-        <p role="alert" className="text-sm font-medium text-danger">
+        <p role="alert" className="text-danger text-sm font-medium">
           {error}
         </p>
       ) : null}
@@ -204,13 +208,24 @@ export function Alert({
     info: "border-primary/30 bg-primary-soft",
   };
   return (
-    <div role={tone === "danger" ? "alert" : "status"} className={cn("rounded-lg border p-3 text-sm", tones[tone], className)}>
+    <div
+      role={tone === "danger" ? "alert" : "status"}
+      className={cn("rounded-lg border p-3 text-sm", tones[tone], className)}
+    >
       {children}
     </div>
   );
 }
 
-export function ProgressBar({ value, label, className }: { value: number; label: string; className?: string }) {
+export function ProgressBar({
+  value,
+  label,
+  className,
+}: {
+  value: number;
+  label: string;
+  className?: string;
+}) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <div
@@ -219,9 +234,9 @@ export function ProgressBar({ value, label, className }: { value: number; label:
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(clamped)}
-      className={cn("h-2 w-full overflow-hidden rounded-full bg-surface-2", className)}
+      className={cn("bg-surface-2 h-2 w-full overflow-hidden rounded-full", className)}
     >
-      <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${clamped}%` }} />
+      <div className="bg-primary h-full rounded-full transition-[width]" style={{ width: `${clamped}%` }} />
     </div>
   );
 }

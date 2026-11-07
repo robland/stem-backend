@@ -32,7 +32,9 @@ export function parsePublicContent(data: unknown): ParseResult<ExerciseContentPu
  * Lit une activité publique isolément : une étape d'un type inconnu (schéma plus récent) ou mal formée
  * ne doit pas empêcher d'afficher les autres.
  */
-export function parseActivity(data: unknown): { ok: true; data: ActivityPublic } | { ok: false; reason: InvalidStep["reason"] } {
+export function parseActivity(
+  data: unknown,
+): { ok: true; data: ActivityPublic } | { ok: false; reason: InvalidStep["reason"] } {
   const type = (data as { type?: unknown } | null)?.type;
   if (!isKnownActivityType(type)) return { ok: false, reason: "unknown_type" };
   const result = ActivityPublic.safeParse(data);

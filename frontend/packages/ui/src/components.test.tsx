@@ -25,7 +25,9 @@ describe("Field", () => {
   it("relie libellé, aide et erreur au contrôle", () => {
     render(
       <Field label="Téléphone" hint="Ex. 06 123 45 67" error="Numéro invalide">
-        {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} aria-invalid={invalid} />}
+        {({ id, describedBy, invalid }) => (
+          <Input id={id} aria-describedby={describedBy} aria-invalid={invalid} />
+        )}
       </Field>,
     );
     const input = screen.getByLabelText("Téléphone");
