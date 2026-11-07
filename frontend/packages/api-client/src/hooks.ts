@@ -6,6 +6,7 @@ import type { components } from "./generated/schema.gen";
 
 export type Schemas = components["schemas"];
 export type Level = Schemas["LevelEnum"];
+export type Serie = Schemas["SerieEnum"];
 export type SubjectCode = Schemas["SubjectCodeEnum"];
 export type Me = Schemas["Me"];
 export type Register = Schemas["Register"];
@@ -30,9 +31,7 @@ export function useSession() {
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { phone: string; password: string }) =>
-      // Le corps réel ne contient que phone/password ; access/refresh sont en lecture seule.
-      unwrap(getAuthApi().POST("/api/auth/login/", { body: body as Schemas["TokenObtainPair"] })),
+    mutationFn: (body: Schemas["Login"]) => unwrap(getAuthApi().POST("/api/auth/login/", { body })),
     onSuccess: (data) => {
       queryClient.clear();
       setAccessToken(data.access);
@@ -94,12 +93,12 @@ export function useChapters(subject?: SubjectCode, level?: Level) {
 export const cursorOf = (next: string | null | undefined) =>
   next ? (new URL(next, "http://x").searchParams.get("cursor") ?? undefined) : undefined;
 
-/** Mes parcours, du plus récent au plus ancien, 20 par page. */
-export function useExercises() {
+/** Mes parcours, du plus récent au plus ancien, 20 par page ; éventuellement ceux d'un chapitre. */
+export function useExercises(chapter?: string) {
   return useInfiniteQuery({
-    queryKey: queryKeys.exercises,
+    queryKey: [...queryKeys.exercises, chapter ?? null],
     queryFn: ({ pageParam }) =>
-      unwrap(getApi().GET("/api/exercises/", { params: { query: { cursor: pageParam } } })),
+      unwrap(getApi().GET("/api/exercises/", { params: { query: { cursor: pageParam, chapter } } })),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => cursorOf(page.next),
   });

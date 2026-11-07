@@ -1,5 +1,5 @@
 import type { FormulaInputMode } from "@stem/activities";
-import { useLogout, useMe, useUpdateMe, type Level, type Me } from "@stem/api-client";
+import { useLogout, useMe, useUpdateMe, type Level, type Me, type Serie } from "@stem/api-client";
 import { Alert, Button, Card, ChoiceGroup, Field, Input, Select, Spinner } from "@stem/ui";
 import { useForm } from "react-hook-form";
 import { PageHeader } from "@/components/PageHeader";
@@ -24,7 +24,7 @@ export function ProfilePage() {
   );
 }
 
-type AccountValues = { pseudo: string; level: Level | ""; serie: string };
+type AccountValues = { pseudo: string; level: Level | ""; serie: Serie | "" };
 
 function AccountForm({ me }: { me: Me }) {
   const update = useUpdateMe();

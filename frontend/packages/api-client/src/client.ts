@@ -36,8 +36,8 @@ export function configureApi(options: { baseUrl?: string } = {}) {
   // `fetch` résolu à l'appel (et non capturé à la création) : remplaçable dans les tests.
   authClient = createClient<paths>({ baseUrl, credentials: "include", fetch: (request) => fetch(request) });
   setRefresher(async () => {
-    // Web : le refresh est lu dans le cookie httpOnly ; l'OpenAPI le déclare à tort obligatoire dans le body.
-    const { data } = await authClient.POST("/api/auth/refresh/", { body: {} as never });
+    // Web : body vide, le refresh est lu dans le cookie httpOnly.
+    const { data } = await authClient.POST("/api/auth/refresh/", { body: {} });
     return data?.access ?? null;
   });
 }

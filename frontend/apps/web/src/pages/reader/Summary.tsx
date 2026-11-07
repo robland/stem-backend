@@ -82,14 +82,9 @@ export function Summary({ content, attempt, onRedo, redoing }: Props) {
         <Button size="lg" onClick={onRedo} loading={redoing}>
           {t.reader.redo}
         </Button>
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" disabled>
-            {t.reader.similar}
-          </Button>
-          <Button variant="secondary" disabled>
-            {t.reader.challenge}
-          </Button>
-        </div>
+        <Button variant="secondary" disabled>
+          {t.reader.challenge}
+        </Button>
         <p className="text-muted text-center text-xs">{t.reader.soonNote}</p>
         <Button asChild variant="ghost">
           <Link to={paths.home}>{t.exercise.backHome}</Link>

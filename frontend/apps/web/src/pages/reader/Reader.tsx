@@ -5,7 +5,7 @@ import { Alert, Button, Card, Spinner } from "@stem/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SpeakButton } from "@/components/SpeakButton";
-import { newId, rememberAttempt, rememberedAttempt } from "@/lib/attempts";
+import { newId } from "@/lib/attempts";
 import { errorMessage } from "@/lib/errors";
 import { usePreferences } from "@/lib/preferences";
 import { t } from "@/strings/fr";
@@ -22,18 +22,19 @@ type Screen =
 
 /**
  * Lecteur de parcours (README frontend §2) : intro → intuition → rappels → une étape par écran → bilan.
- * La tentative vit sur le serveur ; son identifiant est mémorisé sur l'appareil pour reprendre plus tard.
+ * La tentative vit sur le serveur, qui indique celle à reprendre (`current_attempt`).
  */
 export function Reader({ exercise, content }: { exercise: ExerciseDetail; content: ExerciseContentPublic }) {
   const [search] = useSearchParams();
   const prefs = usePreferences();
-  const [attemptId, setAttemptId] = useState(() => search.get("tentative") ?? rememberedAttempt(exercise.id));
+  // Tentative à reprendre : celle de la révision du jour, sinon `current_attempt` (même sur un autre appareil).
+  const [attemptId, setAttemptId] = useState(() => search.get("tentative") ?? exercise.current_attempt);
   const attempt = useAttempt(attemptId);
   const start = useStartAttempt(exercise.id);
   const [screen, setScreen] = useState<Screen>({ kind: "intro" });
   const settings = useMemo(() => ({ formulaInput: prefs.formulaInput }), [prefs.formulaInput]);
 
-  // Tentative mémorisée introuvable (autre compte, base remise à zéro) : on repart de zéro.
+  // Tentative introuvable (lien périmé) : on repart de zéro.
   const lost = attempt.isError && isApiError(attempt.error) && attempt.error.status === 404;
   const current = lost ? undefined : attempt.data;
   const unfinished = current && !current.finished_at ? current : null;
@@ -44,7 +45,6 @@ export function Reader({ exercise, content }: { exercise: ExerciseDetail; conten
   const begin = () =>
     start.mutate(newId(), {
       onSuccess: (created) => {
-        rememberAttempt(exercise.id, created.id);
         setAttemptId(created.id);
         setScreen({ kind: "intuition" });
       },

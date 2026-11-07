@@ -163,7 +163,7 @@ frontend/
 ## 7. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner, lecteur de parcours et renderers des 13 types V1 (en ligne), écran Progrès ; 174 tests verts. Reste : hors-ligne (PWA, IndexedDB, synchro), accueil définitif, Playwright.
+> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner, lecteur de parcours et renderers des 13 types V1 (en ligne), écran Progrès (parcours par chapitre via `?chapter=`), types API régénérés après les retours backend (plus aucune conversion de type sauf le FormData de l'upload) ; 183 tests verts. Reste : hors-ligne (PWA, IndexedDB, synchro), accueil définitif, Playwright.
 
 ### Lancer le frontend
 
@@ -181,7 +181,8 @@ Après un changement de dépendances : `docker compose run --rm --no-deps fronte
 ### Décisions (2026-11-07)
 - **Node dans Docker** (choix du porteur du projet) : image `frontend/Dockerfile` (Node 22, pnpm via corepack, utilisateur `node`).
 - **Matières et objectif** de l'onboarding : **préférences locales** à l'appareil (`apps/web/src/lib/preferences.ts`), l'API ne les stocke pas.
-- **Séries** : l'API accepte un texte libre (≤ 10 caractères) sans liste ; liste centralisée `SERIES` (`A`, `C`, `D`) dans `apps/web/src/strings/fr.ts`, **à confirmer**.
+- **Séries** : `A`, `C`, `D`, validées le 2026-11-07 (`SerieEnum` de l'API) ; `SERIES` dans `apps/web/src/strings/fr.ts`.
+- **Téléphone** : format international côté API (`+242…`) ; le front applique la même normalisation (`lib/phone.ts`, miroir de `accounts.models.normalize_phone`) avant validation et envoi.
 - **Polices système** (aucun téléchargement) ; OpenDyslexic chargée seulement si l'option est activée.
 - **Client API** : `openapi-typescript` (types) + `openapi-fetch` (client typé, ~6 kB) ; jeton d'accès en mémoire, refresh par cookie httpOnly, relance automatique sur 401 (un seul refresh à la fois).
 - **Schéma de contenu** : générateur maison (`packages/content-schema/scripts/generate.mjs`) plutôt que json-schema-to-zod (qui ne résout pas les `$ref`) : un schéma Zod nommé par `$defs`, unions discriminées par `type`, variantes publiques dérivées. `pnpm test` échoue si le fichier généré n'est pas à jour.
@@ -205,7 +206,7 @@ Après un changement de dépendances : `docker compose run --rm --no-deps fronte
   - onglets par exercice trouvé, énoncé modifiable avec aperçu KaTeX en direct, matière / classe / chapitre (chapitre lu sur la feuille affiché), écarter, puis correction → validation → génération → écran de préparation (relance si échec, quota avec heure de reprise) ;
   - photo gardée **en mémoire** à côté de l'énoncé (perdue au rechargement : persistance avec `packages/offline`).
 - [x] `packages/activities` : `RichText` (texte + `$…$` / `$$…$$` + `\ce{}`), KaTeX et mhchem chargés à la demande (≈ 86 kB gzip hors bundle initial), jamais de HTML interprété — 2026-11-07.
-- [x] Lecteur de parcours (`/parcours/:id`, plein écran sans onglets) — 2026-11-07 : intro (énoncé, lecture audio) → intuition → rappels → une étape par écran → bilan (score, étapes, notion clé, « Refaire »). Tentative en ligne : `id` généré par le client et mémorisé sur l'appareil (reprise « où j'en étais », ou `?tentative=` depuis la révision du jour) ; indices demandés un par un à l'API (le 1ᵉʳ aussi, sinon il n'est pas décompté), coût affiché ; réponse renvoyée avec le même `client_uuid` après une coupure ; après une erreur, feedback ciblé, essais restants, réponse à modifier avant de renvoyer ; correction rédigée à la clôture. « Exercice similaire » et « Lancer un défi » désactivés (pas d'endpoint).
+- [x] Lecteur de parcours (`/parcours/:id`, plein écran sans onglets) — 2026-11-07 : intro (énoncé, lecture audio) → intuition → rappels → une étape par écran → bilan (score, étapes, notion clé, « Refaire »). Tentative en ligne : `id` généré par le client ; reprise « où j'en étais » par `current_attempt` (depuis n'importe quel appareil) ou `?tentative=` depuis la révision du jour ; indices déjà obtenus réaffichés depuis `steps[].hints` (3ᵉ compris) ; indices demandés un par un à l'API (le 1ᵉʳ aussi, sinon il n'est pas décompté), coût affiché ; réponse renvoyée avec le même `client_uuid` après une coupure ; après une erreur, feedback ciblé, essais restants, réponse à modifier avant de renvoyer ; correction rédigée à la clôture. « Lancer un défi » désactivé (V2) ; « Exercice similaire » abandonné.
 - [x] Renderers V1 des 13 types — 2026-11-07 :
   - communs : `mcq`, `true_false`, `short_answer` (clavier décimal en numérique), `fill_blanks` (trous dans le texte), `matching` (**toucher-toucher** au lieu du glisser-déposer : petits écrans, clavier), `ordering` (**flèches** monter/descendre, ordre de départ mélangé de façon stable) ;
   - Maths : `formula_input` (deux saisies **en évaluation**, cf. ci-dessous), `graph_points` & `graph_parameters` (**SVG maison** plutôt que JSXGraph : points à glisser doublés de champs numériques, curseurs et courbe redessinée), `variation_table` (signe et flèche par intervalle) ;

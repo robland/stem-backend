@@ -135,6 +135,37 @@ describe("écran Progrès", () => {
     expect(screen.getByRole("link", { name: "Scanner un exercice" })).toHaveAttribute("href", "/scanner");
   });
 
+  it("affiche les parcours d'un chapitre (GET exercises?chapter=)", async () => {
+    const urls: string[] = [];
+    mockApi((request) => {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/progress/") return json(200, PROGRESS);
+      if (url.pathname === "/api/exercises/") {
+        urls.push(url.search);
+        const chapter = url.searchParams.get("chapter");
+        return json(200, {
+          next: null,
+          previous: null,
+          results: chapter === "c2" ? [exercise("e9", "Dériver un polynôme")] : [],
+        });
+      }
+      return undefined;
+    });
+    renderApp("/progres", { authenticated: true });
+    const card = (await screen.findAllByRole("meter", { name: "Maîtrise de Dérivation" }))[0]!.closest(
+      "div.rounded-xl",
+    )!;
+    await userEvent.click(within(card as HTMLElement).getByRole("button", { name: "Voir ses parcours" }));
+    expect(await screen.findByRole("heading", { name: "Parcours : Dérivation" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /Dériver un polynôme/ })).toHaveAttribute(
+      "href",
+      "/parcours/e9",
+    );
+    expect(urls).toContain("?chapter=c2");
+    await userEvent.click(screen.getByRole("button", { name: "Tous mes parcours" }));
+    expect(await screen.findByRole("heading", { name: "Mes parcours" })).toBeInTheDocument();
+  });
+
   it("liste mes parcours page par page (curseur)", async () => {
     const calls = server(PROGRESS, {
       "": {

@@ -7,7 +7,7 @@ import {
 } from "@stem/api-client";
 import { Alert, Button, Card, cn, Meter, Spinner } from "@stem/ui";
 import { CircleAlert, CircleCheck, CircleDashed, Flame, type LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { forwardRef, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { ReviewList } from "@/components/ReviewList";
@@ -31,6 +31,12 @@ const WEAK_POINTS = 3;
 export function ProgressPage() {
   const progress = useProgress();
   const [filter, setFilter] = useState<SubjectCode | null>(null);
+  const [chapter, setChapter] = useState<{ id: string; name: string } | null>(null);
+  const exercisesSection = useRef<HTMLElement>(null);
+  const showChapter = (m: Mastery) => {
+    setChapter({ id: m.chapter.id, name: m.chapter.name });
+    exercisesSection.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  };
 
   if (progress.isPending) return <Spinner label={t.common.loading} />;
   if (progress.isError) return <Alert>{errorMessage(progress.error)}</Alert>;
@@ -128,7 +134,7 @@ export function ProgressPage() {
               <ul className="flex flex-col gap-2">
                 {weak.map((m) => (
                   <li key={m.chapter.id}>
-                    <ChapterCard mastery={m} />
+                    <ChapterCard mastery={m} onShow={showChapter} />
                   </li>
                 ))}
               </ul>
@@ -139,7 +145,7 @@ export function ProgressPage() {
             <ul className="flex flex-col gap-2">
               {shown.map((m) => (
                 <li key={m.chapter.id}>
-                  <ChapterCard mastery={m} />
+                  <ChapterCard mastery={m} onShow={showChapter} />
                 </li>
               ))}
             </ul>
@@ -148,20 +154,23 @@ export function ProgressPage() {
           )}
         </Section>
 
-        <MyExercises />
+        <MyExercises ref={exercisesSection} chapter={chapter} onClear={() => setChapter(null)} />
       </div>
     </>
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+const Section = forwardRef<HTMLElement, { title: string; children: ReactNode }>(function Section(
+  { title, children },
+  ref,
+) {
   return (
-    <section className="flex flex-col gap-3">
+    <section ref={ref} className="flex scroll-mt-4 flex-col gap-3">
       <h2 className="text-lg font-bold">{title}</h2>
       {children}
     </section>
   );
-}
+});
 
 function StatTile({
   value,
@@ -193,7 +202,7 @@ function StatTile({
   );
 }
 
-function ChapterCard({ mastery }: { mastery: Mastery }) {
+function ChapterCard({ mastery, onShow }: { mastery: Mastery; onShow: (m: Mastery) => void }) {
   const state = mastery.state ?? "non_acquis";
   const { icon: Icon, className } = STATES[state];
   const score = mastery.score ?? 0;
@@ -218,15 +227,32 @@ function ChapterCard({ mastery }: { mastery: Mastery }) {
       {mastery.next_review_at ? (
         <p className="text-muted text-sm">{t.progress.review(relativeDay(mastery.next_review_at))}</p>
       ) : null}
+      <Button variant="ghost" className="text-primary self-start px-0" onClick={() => onShow(mastery)}>
+        {t.progress.chapterExercises}
+      </Button>
     </Card>
   );
 }
 
-function MyExercises() {
-  const exercises = useExercises();
+type MyExercisesProps = { chapter: { id: string; name: string } | null; onClear: () => void };
+
+/** Mes parcours (tous, ou ceux d'un chapitre choisi dans la maîtrise : `GET exercises?chapter=`). */
+const MyExercises = forwardRef<HTMLElement, MyExercisesProps>(function MyExercises(
+  { chapter, onClear },
+  ref,
+) {
+  const exercises = useExercises(chapter?.id);
   const items = exercises.data?.pages.flatMap((p) => p.results) ?? [];
   return (
-    <Section title={t.progress.myExercises}>
+    <Section
+      ref={ref}
+      title={chapter ? t.progress.chapterExercisesTitle(chapter.name) : t.progress.myExercises}
+    >
+      {chapter ? (
+        <Button variant="secondary" className="self-start" onClick={onClear}>
+          {t.progress.allExercises}
+        </Button>
+      ) : null}
       {exercises.isPending ? <Spinner label={t.common.loading} /> : null}
       {exercises.isError ? <Alert>{errorMessage(exercises.error)}</Alert> : null}
       {exercises.isSuccess && !items.length ? (
@@ -265,4 +291,4 @@ function MyExercises() {
       ) : null}
     </Section>
   );
-}
+});

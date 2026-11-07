@@ -445,6 +445,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    AccessToken: {
+      access: string;
+    };
     AnswerCreate: {
       step_id: string;
       /** @description Format selon le type d'activité (README §5.1). */
@@ -539,7 +542,12 @@ export interface components {
       /** @description Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json) sans les champs qui donnent la réponse : activity.answer, common_mistakes, explanation, dernier indice. null tant que le parcours n'est pas prêt. */
       readonly content: {
         [key: string]: unknown;
-      };
+      } | null;
+      /**
+       * Format: uuid
+       * @description Tentative commencée et non finie à reprendre (détail : GET /api/attempts/{id}/) ; null sinon.
+       */
+      readonly current_attempt: string | null;
     };
     ExerciseOffline: {
       /** Format: uuid */
@@ -559,7 +567,12 @@ export interface components {
       /** @description Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json) sans les champs qui donnent la réponse : activity.answer, common_mistakes, explanation, dernier indice. null tant que le parcours n'est pas prêt. */
       readonly content: {
         [key: string]: unknown;
-      };
+      } | null;
+      /**
+       * Format: uuid
+       * @description Tentative commencée et non finie à reprendre (détail : GET /api/attempts/{id}/) ; null sinon.
+       */
+      readonly current_attempt: string | null;
     };
     ExtractedExercise: {
       /** Format: uuid */
@@ -609,6 +622,11 @@ export interface components {
      * @enum {string}
      */
     LevelEnum: "6e" | "5e" | "4e" | "3e" | "2nde" | "1re" | "Tle";
+    /** @description Documentation OpenAPI de `auth/login` (la validation reste celle de SimpleJWT). */
+    Login: {
+      phone: string;
+      password: string;
+    };
     Mastery: {
       chapter: components["schemas"]["Chapter"];
       score?: number;
@@ -622,7 +640,7 @@ export interface components {
       readonly phone: string;
       pseudo: string;
       level?: components["schemas"]["LevelEnum"] | components["schemas"]["BlankEnum"];
-      serie?: string;
+      serie?: components["schemas"]["SerieEnum"] | components["schemas"]["BlankEnum"];
       /** Format: date-time */
       readonly date_joined: string;
     };
@@ -662,7 +680,7 @@ export interface components {
       readonly phone?: string;
       pseudo?: string;
       level?: components["schemas"]["LevelEnum"] | components["schemas"]["BlankEnum"];
-      serie?: string;
+      serie?: components["schemas"]["SerieEnum"] | components["schemas"]["BlankEnum"];
       /** Format: date-time */
       readonly date_joined?: string;
     };
@@ -685,7 +703,7 @@ export interface components {
       pseudo: string;
       password: string;
       level: components["schemas"]["LevelEnum"];
-      serie?: string;
+      serie?: components["schemas"]["SerieEnum"] | components["schemas"]["BlankEnum"];
     };
     ReviewItem: {
       /**
@@ -706,6 +724,13 @@ export interface components {
       last_score: number | null;
     };
     /**
+     * @description * `A` - A
+     *     * `C` - C
+     *     * `D` - D
+     * @enum {string}
+     */
+    SerieEnum: "A" | "C" | "D";
+    /**
      * @description * `non_acquis` - Non acquis
      *     * `en_cours` - En cours
      *     * `maitrise` - Maîtrisé
@@ -717,6 +742,8 @@ export interface components {
       status: components["schemas"]["StepStateStatusEnum"];
       wrong_answers: number;
       hints_used: number;
+      /** @description Indices déjà obtenus (texte riche), du 1er au dernier : à réafficher à la reprise. */
+      hints: string[];
       /** @description Sur 100 : 100 − 20 par indice − 20 par erreur ; 0 si échouée. */
       score: number;
     };
@@ -811,15 +838,14 @@ export interface components {
     SyncResult: {
       attempts: components["schemas"]["SyncAttemptResult"][];
     };
-    TokenObtainPair: {
-      phone: string;
-      password: string;
-      readonly access: string;
-      readonly refresh: string;
+    TokenRefreshRequest: {
+      /** @description Mobile uniquement ; le web l'envoie par cookie httpOnly (body vide). */
+      refresh?: string;
     };
-    TokenRefresh: {
-      readonly access: string;
-      refresh: string;
+    TokenRefreshResponse: {
+      access: string;
+      /** @description Nouveau refresh, seulement s'il a été envoyé dans le body (sinon : cookie). */
+      refresh?: string;
     };
     Upload: {
       /** Format: uuid */
@@ -833,7 +859,7 @@ export interface components {
     };
     UploadCreate: {
       /**
-       * Format: uri
+       * Format: binary
        * @description Photo (JPEG, PNG, WebP) ou PDF.
        */
       file: string;
@@ -965,9 +991,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["TokenObtainPair"];
-        "application/x-www-form-urlencoded": components["schemas"]["TokenObtainPair"];
-        "multipart/form-data": components["schemas"]["TokenObtainPair"];
+        "application/json": components["schemas"]["Login"];
+        "application/x-www-form-urlencoded": components["schemas"]["Login"];
+        "multipart/form-data": components["schemas"]["Login"];
       };
     };
     responses: {
@@ -976,8 +1002,15 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["TokenObtainPair"];
+          "application/json": components["schemas"]["AccessToken"];
         };
+      };
+      /** @description Identifiants invalides. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -1006,11 +1039,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody: {
+    requestBody?: {
       content: {
-        "application/json": components["schemas"]["TokenRefresh"];
-        "application/x-www-form-urlencoded": components["schemas"]["TokenRefresh"];
-        "multipart/form-data": components["schemas"]["TokenRefresh"];
+        "application/json": components["schemas"]["TokenRefreshRequest"];
+        "application/x-www-form-urlencoded": components["schemas"]["TokenRefreshRequest"];
+        "multipart/form-data": components["schemas"]["TokenRefreshRequest"];
       };
     };
     responses: {
@@ -1019,8 +1052,15 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["TokenRefresh"];
+          "application/json": components["schemas"]["TokenRefreshResponse"];
         };
+      };
+      /** @description Refresh absent, expiré ou invalidé. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -1143,6 +1183,8 @@ export interface operations {
   exercises_list: {
     parameters: {
       query?: {
+        /** @description Uniquement les parcours de ce chapitre. */
+        chapter?: string;
         /** @description La valeur du curseur de pagination. */
         cursor?: string;
       };

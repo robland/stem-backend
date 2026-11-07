@@ -40,7 +40,9 @@ describe("connexion", () => {
   it("normalise le numéro, se connecte et revient à la page demandée", async () => {
     const calls = mockApi((request, body) => {
       if (new URL(request.url).pathname === "/api/auth/login/") {
-        return (body as { phone: string }).phone === "061234567" ? json(200, { access: "A" }) : json(401, {});
+        return (body as { phone: string }).phone === "+242061234567"
+          ? json(200, { access: "A" })
+          : json(401, {});
       }
       return authedRoutes(request);
     });
@@ -52,7 +54,7 @@ describe("connexion", () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/progres"));
     expect(calls.find((c) => c.path === "/api/auth/login/")?.body).toEqual({
-      phone: "061234567",
+      phone: "+242061234567",
       password: "secret123",
     });
   });
@@ -108,7 +110,7 @@ describe("inscription", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/"));
     expect(await screen.findByRole("heading", { name: "Salut kiki !" })).toBeInTheDocument();
     expect(calls.find((c) => c.path === "/api/auth/register/")?.body).toEqual({
-      phone: "061234567",
+      phone: "+242061234567",
       pseudo: "Neo",
       password: "motdepasse",
       level: "Tle",

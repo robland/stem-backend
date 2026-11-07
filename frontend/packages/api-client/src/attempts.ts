@@ -70,7 +70,9 @@ export function useHint(attemptId: string) {
             ...attempt,
             hints_used: attempt.hints_used + 1,
             steps: attempt.steps.map((s) =>
-              s.step_id === hint.step_id ? { ...s, hints_used: hint.level } : s,
+              s.step_id === hint.step_id
+                ? { ...s, hints_used: hint.level, hints: [...s.hints, hint.hint] }
+                : s,
             ),
           },
       ),

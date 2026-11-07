@@ -1,5 +1,5 @@
 // Tous les textes d'interface (README frontend §8.2). Le contenu pédagogique vient de l'API.
-import type { Level, SubjectCode } from "@stem/api-client";
+import type { Level, Serie, SubjectCode } from "@stem/api-client";
 
 export const APP_NAME = "StemLearning";
 
@@ -15,8 +15,8 @@ export const LEVELS: { value: Level; label: string }[] = [
 
 export const HIGH_SCHOOL_LEVELS: Level[] = ["2nde", "1re", "Tle"];
 
-// L'API accepte une série libre (≤ 10 caractères) : liste à confirmer avec le porteur du projet.
-export const SERIES = ["A", "C", "D"] as const;
+// Séries du lycée validées le 2026-11-07 (`SerieEnum` de l'API).
+export const SERIES: readonly Serie[] = ["A", "C", "D"];
 
 export const SUBJECTS: { value: SubjectCode; label: string; available: boolean }[] = [
   { value: "maths", label: "Mathématiques", available: true },
@@ -137,6 +137,9 @@ export const t = {
     masteryLabel: (chapter: string) => `Maîtrise de ${chapter}`,
     review: (when: string) => `À revoir ${when}`,
     myExercises: "Mes parcours",
+    chapterExercises: "Voir ses parcours",
+    chapterExercisesTitle: (chapter: string) => `Parcours : ${chapter}`,
+    allExercises: "Tous mes parcours",
     myExercisesEmpty: "Aucun parcours pour l'instant.",
     more: "Afficher plus",
     status: {
@@ -260,9 +263,8 @@ export const t = {
         .join(", "),
     keyTakeaway: "À retenir",
     redo: "Refaire le parcours",
-    similar: "Exercice similaire",
     challenge: "Lancer un défi",
-    soonNote: "« Exercice similaire » et « Lancer un défi » arrivent bientôt.",
+    soonNote: "Les défis arrivent bientôt.",
     invalidContent: "Ce parcours n'a pas pu être lu. Mets l'application à jour ou réessaie plus tard.",
   },
   exercise: {

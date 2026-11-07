@@ -12,8 +12,8 @@ export type ExtractedExercise = Schemas["ExtractedExercise"];
 export type ExtractedExercisePatch = Schemas["PatchedExtractedExercise"];
 export type Exercise = Schemas["Exercise"];
 export type GenerationStatus = Schemas["GenerationStatusEnum"];
-/** `content` vaut null tant que le parcours n'est pas prêt (l'OpenAPI l'omet). */
-export type ExerciseDetail = Omit<Schemas["ExerciseDetail"], "content"> & { content: unknown };
+/** `content` vaut null tant que le parcours n'est pas prêt. */
+export type ExerciseDetail = Schemas["ExerciseDetail"];
 
 export const UPLOAD_TERMINAL: readonly UploadStatus[] = ["extracted", "error"];
 export const GENERATION_TERMINAL: readonly GenerationStatus[] = ["ready", "needs_review", "error"];
@@ -113,7 +113,7 @@ export function useCreateUpload() {
     mutationFn: (file: Blob) => {
       const form = new FormData();
       form.append("file", file, file instanceof File ? file.name : "photo.jpg");
-      // L'OpenAPI type `file` en chaîne : le corps réel est un FormData.
+      // `format: binary` est typé `string` par openapi-typescript : le corps réel est un FormData.
       return unwrap(
         getApi().POST("/api/uploads/", {
           body: form as never,

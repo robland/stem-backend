@@ -1,5 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { isApiError, useLogin, useRegister, type Level, type SubjectCode } from "@stem/api-client";
+import {
+  isApiError,
+  useLogin,
+  useRegister,
+  type Level,
+  type Serie,
+  type SubjectCode,
+} from "@stem/api-client";
 import { Alert, Button, ChoiceGroup, Field, Input, ProgressBar } from "@stem/ui";
 import { useState } from "react";
 import { Controller, useForm, type FieldPath } from "react-hook-form";
@@ -18,7 +25,7 @@ const schema = z
     pseudo: z.string().trim().min(1, t.register.pseudoRequired).max(30, t.register.pseudoTooLong),
     password: z.string().min(8, t.register.passwordTooShort),
     level: z.custom<Level>((v) => typeof v === "string" && v !== "", t.register.levelRequired),
-    serie: z.string().max(10),
+    serie: z.custom<Serie | "">(),
     subjects: z.array(z.custom<SubjectCode>()),
     goal: z.custom<Goal>().nullable(),
   })

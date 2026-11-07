@@ -29,8 +29,6 @@ export function StepScreen({ attemptId, step, state, isLast, onNext }: Props) {
     activity.ok ? initialAnswer(activity.data, step.id) : undefined,
   );
   const [result, setResult] = useState<AnswerResult | null>(null);
-  // Textes des indices déjà obtenus : les 2 premiers sont dans le contenu public, le 3ᵉ vient de l'API.
-  const [fetched, setFetched] = useState<Record<number, string>>({});
   // Après une erreur, la même réponse ne se renvoie pas : il faut d'abord la modifier.
   const [dirty, setDirty] = useState(true);
   const pendingUuid = useRef<string | null>(null);
@@ -68,10 +66,9 @@ export function StepScreen({ attemptId, step, state, isLast, onNext }: Props) {
     );
   };
 
-  const askHint = () =>
-    hint.mutate(step.id, { onSuccess: (h) => setFetched((f) => ({ ...f, [h.level]: h.hint })) });
-
-  const hints = Array.from({ length: hintsUsed }, (_, i) => fetched[i + 1] ?? step.hints[i] ?? null);
+  const askHint = () => hint.mutate(step.id);
+  // Indices déjà obtenus, renvoyés par l'API (`steps[].hints`) : le 3ᵉ est réaffiché à la reprise.
+  const hints = state?.hints ?? [];
 
   return (
     <div className="flex grow flex-col">
@@ -102,11 +99,7 @@ export function StepScreen({ attemptId, step, state, isLast, onNext }: Props) {
               <li key={i} className="bg-accent-soft rounded-xl p-4">
                 <p className="text-sm font-bold">{t.reader.hintTitle(i + 1, TOTAL_HINTS)}</p>
                 <p className="mt-1">
-                  {text ? (
-                    <RichText text={text} />
-                  ) : (
-                    <span className="text-muted">{t.reader.hintAlreadySeen}</span>
-                  )}
+                  <RichText text={text} />
                 </p>
               </li>
             ))}

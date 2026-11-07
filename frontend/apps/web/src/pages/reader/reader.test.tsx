@@ -23,19 +23,29 @@ type StepState = {
   status: "pending" | "succeeded" | "failed";
   wrong_answers: number;
   hints_used: number;
+  hints: string[];
   score: number;
 };
 
 /** Faux serveur de tentatives : correction du QCM (b) et du vrai/faux (vrai), règles de score du backend. */
-function fakeServer({ attemptId = "at1", startAt = "s1", failNetworkOnce = false } = {}) {
+function fakeServer({
+  attemptId = "at1",
+  startAt = "s1",
+  failNetworkOnce = false,
+  currentAttempt = null as string | null,
+  hintsOnCurrent = [] as string[],
+} = {}) {
   const steps: StepState[] = ["s1", "s2"].map((id) => ({
     step_id: id,
     status: "pending",
     wrong_answers: 0,
     hints_used: 0,
+    hints: [] as string[],
     score: 0,
   }));
   if (startAt === "s2") Object.assign(steps[0]!, { status: "succeeded", score: 100 });
+  const current = steps.find((s) => s.step_id === startAt)!;
+  Object.assign(current, { hints: [...hintsOnCurrent], hints_used: hintsOnCurrent.length });
   let networkFailed = !failNetworkOnce;
   const attempt = () => {
     const current = steps.find((s) => s.status === "pending")?.step_id ?? null;
@@ -48,17 +58,18 @@ function fakeServer({ attemptId = "at1", startAt = "s1", failNetworkOnce = false
       score: Math.round(steps.reduce((a, s) => a + s.score, 0) / steps.length),
       hints_used: steps.reduce((a, s) => a + s.hints_used, 0),
       current_step_id: current,
-      steps,
+      steps: structuredClone(steps), // copie : le cache du client ne doit pas partager ces objets
     };
   };
   const calls = mockApi((request, body) => {
     const path = new URL(request.url).pathname;
-    if (path === "/api/exercises/pa1/") return json(200, EXERCISE);
+    if (path === "/api/exercises/pa1/") return json(200, { ...EXERCISE, current_attempt: currentAttempt });
     if (path === "/api/exercises/pa1/attempts/") return json(201, attempt());
     if (path === `/api/attempts/${attemptId}/`) return json(200, attempt());
     if (path === `/api/attempts/${attemptId}/hints/`) {
       const state = steps.find((s) => s.step_id === (body as { step_id: string }).step_id)!;
       state.hints_used += 1;
+      state.hints.push(`Indice serveur ${state.hints_used}`);
       return json(200, {
         step_id: state.step_id,
         hint: `Indice serveur ${state.hints_used}`,
@@ -97,7 +108,6 @@ function fakeServer({ attemptId = "at1", startAt = "s1", failNetworkOnce = false
   return calls;
 }
 
-beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 describe("lecteur de parcours", () => {
@@ -148,7 +158,6 @@ describe("lecteur de parcours", () => {
     // L'identifiant de tentative vient du client (idempotence) et est mémorisé pour la reprise.
     const start = calls.find((c) => c.path === "/api/exercises/pa1/attempts/")?.body as { id: string };
     expect(start.id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(localStorage.getItem("stem.attempt.pa1")).toBe("at1");
   });
 
   it("donne les indices un par un, avec leur coût", async () => {
@@ -165,15 +174,27 @@ describe("lecteur de parcours", () => {
     expect(screen.getByRole("button", { name: /Indice 2/ })).toBeInTheDocument();
   });
 
-  it("reprend une tentative en cours à l'étape où l'élève s'était arrêté", async () => {
-    localStorage.setItem("stem.attempt.pa1", "at1");
-    fakeServer({ startAt: "s2" });
+  it("reprend la tentative indiquée par le serveur (current_attempt), indices déjà obtenus compris", async () => {
+    fakeServer({
+      startAt: "s2",
+      currentAttempt: "at1",
+      hintsOnCurrent: ["Relis l'énoncé.", "Calcule f(1).", "f(1) = 0."],
+    });
     renderApp("/parcours/pa1", { authenticated: true });
     await userEvent.click(await screen.findByRole("button", { name: "Reprendre où j'en étais" }));
     expect(await screen.findByRole("radio", { name: "Vrai" })).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Étape 2 sur 2" })).toBeInTheDocument();
+    // Le 3ᵉ indice n'est pas dans le contenu public : il vient de `steps[].hints`.
+    expect(screen.getByText("f(1) = 0.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tous les indices ont été utilisés/ })).toBeDisabled();
   });
 
+  it("sans tentative en cours : propose de commencer", async () => {
+    fakeServer();
+    renderApp("/parcours/pa1", { authenticated: true });
+    expect(await screen.findByRole("button", { name: "Commencer" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reprendre où j'en étais" })).not.toBeInTheDocument();
+  });
   it("renvoie la même réponse avec le même client_uuid après une coupure réseau", async () => {
     const calls = fakeServer({ failNetworkOnce: true });
     renderApp("/parcours/pa1", { authenticated: true });
