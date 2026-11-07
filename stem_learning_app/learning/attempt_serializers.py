@@ -27,7 +27,7 @@ class AttemptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attempt
         fields = [
-            "id", "exercise", "mode", "started_at", "finished_at", "score", "hints_used",
+            "id", "exercise", "mode", "challenge", "started_at", "finished_at", "score", "hints_used",
             "current_step_id", "steps",
         ]
         read_only_fields = fields

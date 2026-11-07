@@ -17,6 +17,7 @@ urlpatterns = [
     path('api/curriculum/', include("curriculum.urls")),
     path('api/', include("ingestion.urls")),
     path('api/', include("learning.urls")),
+    path('api/', include("challenges.urls")),
 ]
 
 # Les médias ne sont servis par Django qu'en développement (static() ne fait rien si DEBUG=False).

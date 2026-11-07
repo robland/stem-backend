@@ -62,7 +62,9 @@ class TestProgress:
     def test_empty(self, auth_client):
         data = auth_client.get(URL).data
 
-        assert data["summary"] == {"exercises_done": 0, "attempts_finished": 0, "average_score": None, "streak_days": 0}
+        assert data["summary"] == {
+            "exercises_done": 0, "attempts_finished": 0, "average_score": None, "streak_days": 0, "author_points": 0,
+        }
         assert data["subjects"] == data["chapters"] == data["review_today"] == []
 
     def test_summary_and_subjects(self, auth_client, user):
@@ -72,7 +74,9 @@ class TestProgress:
 
         data = auth_client.get(URL).data
 
-        assert data["summary"] == {"exercises_done": 1, "attempts_finished": 2, "average_score": 50, "streak_days": 1}
+        assert data["summary"] == {
+            "exercises_done": 1, "attempts_finished": 2, "average_score": 50, "streak_days": 1, "author_points": 0,
+        }
         assert data["subjects"] == [{"subject": "maths", "exercises_done": 1, "average_score": 50}]
 
     def test_only_own_progress(self, auth_client, other_client, user, other_user):

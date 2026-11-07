@@ -1,5 +1,6 @@
 from .exercise import SCHEMA_VERSION, ExerciseContent, GeneratedExercise
 from .extraction import ExtractedExerciseOut, ExtractionOutput
+from .moderation import ModerationOutput
 from .rich_text import RichText
 
 __all__ = [
@@ -8,5 +9,6 @@ __all__ = [
     "ExtractedExerciseOut",
     "ExtractionOutput",
     "GeneratedExercise",
+    "ModerationOutput",
     "RichText",
 ]

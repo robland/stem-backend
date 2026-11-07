@@ -45,6 +45,7 @@ LLM_CLIENT = os.environ.get("LLM_CLIENT", "llm.clients.openai.OpenAIClient")
 LLM_MODELS = {
     "extraction": os.environ.get("LLM_MODEL_EXTRACTION", "gpt-4.1-mini"),
     "generation": os.environ.get("LLM_MODEL_GENERATION", "gpt-4.1"),
+    "moderation": os.environ.get("LLM_MODEL_MODERATION", "gpt-4.1-mini"),
 }
 LLM_TIMEOUT_SECONDS = int(os.environ.get("LLM_TIMEOUT_SECONDS", "90"))
 LLM_MAX_RETRIES = int(os.environ.get("LLM_MAX_RETRIES", "2"))
@@ -78,6 +79,13 @@ SSE_RETRY_MS = int(os.environ.get("SSE_RETRY_MS", "3000"))
 # Tentatives (README §5.2) : une étape est close après réussite ou après ce nombre d'erreurs.
 ATTEMPT_MAX_WRONG_ANSWERS = int(os.environ.get("ATTEMPT_MAX_WRONG_ANSWERS", "3"))
 
+# Défis (README §5.4) : masqué à partir de ce nombre de signalements ; points de l'auteur
+# par participant qui termine, plafonnés par défi ; taille du classement renvoyé.
+CHALLENGE_REPORTS_TO_HIDE = int(os.environ.get("CHALLENGE_REPORTS_TO_HIDE", "3"))
+CHALLENGE_AUTHOR_POINTS_PER_FINISH = 10
+CHALLENGE_AUTHOR_POINTS_MAX = 50
+CHALLENGE_LEADERBOARD_SIZE = 50
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", FRONTEND_URL)
 CORS_ALLOW_CREDENTIALS = True
@@ -91,6 +99,7 @@ INSTALLED_APPS = [
     'curriculum',
     'ingestion',
     'learning',
+    'challenges',
     'llm',
     'grading',
     'rest_framework',
@@ -201,6 +210,7 @@ SPECTACULAR_SETTINGS = {
         'SubjectCodeEnum': 'curriculum.choices.SubjectCode',
         'LevelEnum': 'curriculum.choices.Level',
         'SerieEnum': 'curriculum.choices.Serie',
+        'ChallengeStatusEnum': 'challenges.models.Challenge.Status',
     },
 }
 

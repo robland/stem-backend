@@ -163,8 +163,9 @@ def submit_answer(attempt, *, step_id, response, client_uuid, answered_at=None, 
         except InvalidResponse as e:
             raise AttemptError(str(e))
 
-        # Indices consultés hors-ligne : on garde le maximum connu.
-        offline_hints = min(hints_used or 0, len(steps[step_id].hints))
+        # Indices consultés hors-ligne : on garde le maximum connu. Un défi se joue en ligne : seuls comptent
+        # les indices demandés au serveur.
+        offline_hints = 0 if attempt.challenge_id else min(hints_used or 0, len(steps[step_id].hints))
         if offline_hints > attempt.hints.get(step_id, 0):
             attempt.hints[step_id] = offline_hints
         answer = StepAnswer.objects.create(
@@ -195,6 +196,9 @@ def next_hint(attempt, step_id):
         attempt = Attempt.objects.select_for_update().select_related("exercise").get(id=attempt.id)
         if attempt.finished_at:
             raise AttemptError("Cette tentative est terminée.")
+        # Pas de select_related : PostgreSQL refuse FOR UPDATE sur le côté nullable d'une jointure externe.
+        if attempt.challenge_id and not attempt.challenge.hints_allowed:
+            raise AttemptError("Les indices sont désactivés pour ce défi.")
         content = load_content(attempt)
         steps = {step.id: step for step in content.steps}
         if step_id not in steps:
