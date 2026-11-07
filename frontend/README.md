@@ -155,15 +155,37 @@ frontend/
 ## 7. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — **rien n'est encore créé** (ni web ni mobile). Le backend est en Phase 0 (assainissement).
+> Dernière mise à jour : 2026-11-07 — Phase 1 web démarrée (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding ; 44 tests verts.
+
+### Lancer le frontend
+
+Node tourne dans Docker (aucune installation sur la machine) ; le service `frontend` du `docker-compose.yml` racine monte le dépôt et relaie `/api` vers `web`.
+
+```bash
+docker compose up frontend                              # http://localhost:5173 (installe les dépendances au démarrage)
+docker compose run --rm --no-deps frontend pnpm test    # typecheck : pnpm typecheck ; lint : pnpm lint ; build : pnpm build
+docker compose run --rm --no-deps frontend pnpm api:generate     # après un changement d'API (backend démarré)
+docker compose run --rm --no-deps frontend pnpm schema:generate  # après `manage.py export_content_schema`
+```
+
+Après un changement de dépendances : `docker compose run --rm --no-deps frontend pnpm install` (le `pnpm-lock.yaml` est versionné).
+
+### Décisions (2026-11-07)
+- **Node dans Docker** (choix du porteur du projet) : image `frontend/Dockerfile` (Node 22, pnpm via corepack, utilisateur `node`).
+- **Matières et objectif** de l'onboarding : **préférences locales** à l'appareil (`apps/web/src/lib/preferences.ts`), l'API ne les stocke pas.
+- **Séries** : l'API accepte un texte libre (≤ 10 caractères) sans liste ; liste centralisée `SERIES` (`A`, `C`, `D`) dans `apps/web/src/strings/fr.ts`, **à confirmer**.
+- **Polices système** (aucun téléchargement) ; OpenDyslexic chargée seulement si l'option est activée.
+- **Client API** : `openapi-typescript` (types) + `openapi-fetch` (client typé, ~6 kB) ; jeton d'accès en mémoire, refresh par cookie httpOnly, relance automatique sur 401 (un seul refresh à la fois).
+- **Schéma de contenu** : générateur maison (`packages/content-schema/scripts/generate.mjs`) plutôt que json-schema-to-zod (qui ne résout pas les `$ref`) : un schéma Zod nommé par `$defs`, unions discriminées par `type`, variantes publiques dérivées. `pnpm test` échoue si le fichier généré n'est pas à jour.
+- Nom de l'application : provisoire (`APP_NAME = "StemLearning"`), **à décider**.
 
 ### Phase 1 — V1 Web (Maths + Physique-Chimie)
-- [ ] Initialiser le monorepo (pnpm, Turborepo, TS strict, ESLint, Prettier, Vitest).
-- [ ] `packages/ui` : tokens (couleurs, typo, espacements, clair/sombre), composants de base.
-- [ ] `packages/api-client` : génération depuis l'OpenAPI + hooks TanStack Query + gestion du refresh.
-- [ ] `packages/content-schema` : types Zod du schéma `1.1`, **générés** depuis `stem_learning_app/schemas/exercise-content.schema.json` (ex. json-schema-to-zod) plutôt qu'écrits à la main. Le contenu public (`GET /api/exercises/{id}`) n'a ni `activity.answer`, ni `common_mistakes`, ni `explanation`, et seulement 2 indices sur 3.
+- [x] Initialiser le monorepo (pnpm, Turborepo, TS strict, ESLint, Prettier, Vitest) — 2026-11-07.
+- [x] `packages/ui` : tokens (clair/sombre, contrastes AA, cibles ≥ 44 px), Button, Input, Select, Field, ChoiceGroup, Card, Alert, ProgressBar, Spinner — 2026-11-07.
+- [x] `packages/api-client` : types générés depuis l'OpenAPI + hooks TanStack Query (auth, me, référentiel, progrès) + refresh automatique — 2026-11-07. Hooks uploads / parcours / tentatives et client SSE à ajouter avec leurs écrans.
+- [x] `packages/content-schema` : Zod généré depuis le JSON Schema `1.1`, variantes publiques (`ExerciseContentPublic`), `parseActivity` (type inconnu / invalide sans crash), fixtures miroir de `llm/tests/factories.py` — 2026-11-07.
 - [ ] Maquettes validées : onboarding, accueil, scanner, résolution, bilan, progrès.
-- [ ] Auth + onboarding (téléphone, pseudo, niveau/série, matières).
+- [x] Auth + onboarding (téléphone, pseudo, mot de passe → classe/série → matières → objectif), session restaurée au chargement, profil (pseudo, classe, série, thème, police dyslexie, déconnexion) — 2026-11-07. Navigation 5 onglets responsive (barre en bas sur mobile, latérale ≥ `lg`). Accueil minimal en attendant sa maquette.
 - [ ] Scanner web : upload (fichier/caméra), recadrage, compression, suivi SSE, choix d'exercice, édition de l'énoncé avec aperçu LaTeX.
 - [ ] Lecteur de parcours : intuition, rappels, étapes, indices, feedback, bilan.
 - [ ] Renderers V1 communs : `mcq`, `true_false`, `short_answer`, `fill_blanks`, `matching`, `ordering`.
