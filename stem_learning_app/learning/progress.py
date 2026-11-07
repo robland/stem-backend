@@ -158,6 +158,8 @@ def streak_days(user):
 
 
 def progress_summary(user):
+    from challenges.services import author_points  # challenges dépend de learning
+
     # order_by() : l'ordre par défaut (-started_at) fausserait les DISTINCT.
     finished = Attempt.objects.filter(user=user, finished_at__isnull=False).order_by()
     by_subject = (
@@ -176,6 +178,7 @@ def progress_summary(user):
             "attempts_finished": finished.count(),
             "average_score": round(average) if average is not None else None,
             "streak_days": streak_days(user),
+            "author_points": author_points(user),
         },
         "subjects": [
             {

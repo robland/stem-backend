@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from challenges.services import recover_pending_moderations
 from ingestion.services import purge_expired_files, recover_stuck_uploads
 from learning.services import recover_stuck_generations
 
@@ -15,4 +16,5 @@ class Command(BaseCommand):
         self.stdout.write(f"Uploads : {relaunched} relancé(s), {failed} mis en erreur.")
         relaunched, failed = recover_stuck_generations()
         self.stdout.write(f"Parcours : {relaunched} relancé(s), {failed} mis en erreur.")
+        self.stdout.write(f"Modérations de défis relancées : {recover_pending_moderations()}.")
         self.stdout.write(f"Fichiers expirés supprimés : {purge_expired_files()}.")

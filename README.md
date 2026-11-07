@@ -96,10 +96,11 @@ stem_learning_app/
 | `Upload` | `user`, `file`, `file_hash`, `status`, `created_at` | Hash unique **par utilisateur**. **Fichier supprimé après validation de l'extraction** (il peut contenir nom/écriture de l'élève). |
 | `ExtractedExercise` | `upload`, `order`, `statement` (texte riche §6.1), `subject`, `chapter`, `level`, `validated_at` | Corrigeable par l'élève avant génération |
 | `Exercise` (parcours) | `owner`, `source` (ExtractedExercise), `subject`, `chapter`, `level`, `content` (JSON §6), `schema_version`, `generation_status`, `content_hash` | `content` validé par Pydantic avant enregistrement |
-| `Attempt` | `user`, `exercise`, `started_at`, `finished_at`, `score`, `hints_used`, `mode` (`solo`/`challenge`) | |
+| `Attempt` | `user`, `exercise`, `started_at`, `finished_at`, `score`, `hints_used`, `mode` (`solo`/`challenge`), `challenge` (nullable) | Une seule tentative par élève et par défi |
 | `StepAnswer` | `attempt`, `step_id`, `response` (JSON), `is_correct`, `hints_used`, `answered_at`, `client_uuid` (unique) | `client_uuid` rend la synchro hors-ligne **idempotente** |
 | `Mastery` | `user`, `chapter`, `score` (0–100), `state` (`non_acquis`/`en_cours`/`maitrise`), `next_review_at` | Répétition espacée |
-| `Challenge` (V2) | `exercise`, `author`, `visibility` (`public`/`private`), `code`, `timed`, `hints_allowed`, `status` (modération) | Seul l'énoncé retranscrit est partagé, jamais l'image |
+| `Challenge` (V2) | `exercise`, `author`, `visibility` (`public`/`private`), `code` (6 caractères, unique), `timed`, `hints_allowed`, `status` (`pending`/`active`/`rejected`/`hidden`), `moderation_reasons` | Seul l'énoncé retranscrit est partagé, jamais l'image |
+| `ChallengeReport` (V2) | `challenge`, `reporter`, `reason` (`inappropriate`/`personal_data`/`wrong_content`/`other`) | Un par élève et par défi ; pas de texte libre |
 
 ---
 
@@ -161,6 +162,16 @@ Règles :
 - **Révision du jour** (10 au plus) : d'abord les tentatives commencées non finies (`to_finish`, sauf si une tentative finie plus récente existe), puis les parcours dont l'échéance tombe aujourd'hui ou avant (`to_review`). Seuls les parcours `ready`.
 - **Maîtrise par chapitre** (`Mastery`, mise à jour à la fin de chaque tentative, en ligne ou par synchro) : première tentative = son score, puis moyenne mobile `0,6 × ancien + 0,4 × nouveau` ; état `maitrise` ≥ 80, `en_cours` ≥ 40, sinon `non_acquis` ; `next_review_at` = plus proche échéance des parcours du chapitre.
 - **Série** (`streak_days`) : jours consécutifs (fuseau `Africa/Brazzaville`) avec au moins une réponse, jusqu'à aujourd'hui ou hier.
+
+### 5.4 Défis (`challenges`, décisions du porteur du projet du 2026-11-07)
+
+- **Création** : l'auteur partage un de ses parcours `ready` qu'il a **déjà terminé** au moins une fois (« une fois l'exercice travaillé »). Options : `visibility`, `timed` (chrono affiché), `hints_allowed`. Un code de partage de 6 caractères sans caractères ambigus est créé.
+- **Publication** : un défi **privé** est actif tout de suite et se rejoint avec son code. Un défi **public** reste `pending` jusqu'au verdict du LLM sur l'énoncé (`llm.services.moderate_statement`, prompt `moderation.v1`, modèle `LLM_MODELS["moderation"]`) : `active` (catalogue) ou `rejected` (motifs `personal_data`, `inappropriate`, `not_schoolwork`, expliqués à l'auteur seul). Un échec d'appel le laisse `pending` ; la maintenance relance la vérification. Un énoncé déjà au catalogue public (même `content_hash`) est refusé ; en privé, c'est permis.
+- **Signalements** : un par élève et par défi (l'auteur ne peut pas signaler le sien) ; à `CHALLENGE_REPORTS_TO_HIDE` (3), le défi passe `hidden` (plus de nouveaux participants) en attendant une relecture dans l'admin (actions « Rendre actif » / « Refuser »).
+- **Participation** : une seule tentative par élève (`mode = challenge`), l'auteur exclu ; `started_at` = heure du serveur. Correction **en ligne uniquement** : la synchro hors-ligne refuse les tentatives de défi, les `hints_used` envoyés sont ignorés, pas de paquet `offline`. Indices désactivés (`hints_allowed = false`) : retirés du contenu et refusés par `POST hints`.
+- **Classement** (par défi uniquement, pseudos seulement, pas de classement global) : participants ayant terminé, score décroissant (règle §5.2), puis durée (`finished_at − started_at`) croissante, puis ordre d'arrivée ; les `CHALLENGE_LEADERBOARD_SIZE` (50) premiers et la place de l'élève.
+- **Points de l'auteur** : `CHALLENGE_AUTHOR_POINTS_PER_FINISH` (10) par participant qui termine, au plus `CHALLENGE_AUTHOR_POINTS_MAX` (50) par défi ; total dans `progress.summary.author_points`.
+- **Visibilité** : un élève voit les défis publics actifs, les siens (tous statuts) et ceux qu'il a rejoints ; un défi privé se retrouve par son code. Le code n'est montré qu'à l'auteur.
 
 ---
 
@@ -239,7 +250,7 @@ Chaque activité porte `type`, `grading` et `prompt` (consigne, texte riche).
 ### 6.4 Exposition des réponses
 - `GET /api/exercises/{id}` : contenu **sans** `activity.answer`, `common_mistakes`, `explanation` (la correction rédigée), ni dernier niveau d'indice (`learning.services.public_content`).
 - `GET /api/exercises/{id}/offline` : contenu **complet**, réservé au **propriétaire** du parcours (pas aux défis) pour la correction hors-ligne.
-- Défis : correction **toujours côté serveur, en ligne**.
+- Défis : correction **toujours côté serveur, en ligne** ; `GET challenges/{id}` donne le contenu public (sans indices si `hints_allowed` est faux).
 
 ---
 
@@ -268,7 +279,13 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | POST | `attempts/{id}/answers` | `{step_id, response, client_uuid, answered_at?, hints_used?}` → `{is_correct, feedback, details, step, explanation, attempt}` ; `201`, ou `200` si `client_uuid` déjà reçu |
 | POST | `attempts/{id}/hints` | `{step_id}` → `{hint, level, total}` (étape en cours uniquement) |
 | POST | `sync` | `{attempts: [{id, exercise, started_at, answers: [...]}]}` → statut par tentative et par réponse (cf. §5.2) |
-| GET | `progress` | `summary` (parcours faits, tentatives, score moyen, série de jours), `subjects`, `chapters` (maîtrise), `review_today` (cf. §5.3) |
+| GET | `progress` | `summary` (parcours faits, tentatives, score moyen, série de jours, points d'auteur), `subjects`, `chapters` (maîtrise), `review_today` (cf. §5.3) |
+| GET | `challenges?scope=public\|mine\|joined&subject=&level=&chapter=` | défis (§5.4) : catalogue public actif (filtres), mes défis (statut, motifs de refus, code, points), défis rejoints (« Défis reçus ») ; curseur, 20 |
+| POST | `challenges` | `{exercise, visibility, timed?, hints_allowed?}` → `201` défi (privé : `active` ; public : `pending`) ; `400` parcours pas prêt / pas terminé / déjà au catalogue |
+| GET | `challenges/{id}` / `challenges/code/{code}` | détail + `content` public (null si non actif) + `my_attempt` ; par code : défis actifs, insensible à la casse |
+| POST | `challenges/{id}/attempts` | `{id?, code?}` (code requis en privé) → `201` tentative, `200` si déjà commencée ; réponses et indices par `attempts/{id}/…` |
+| POST | `challenges/{id}/report` | `{reason}` → `201`, `200` si déjà signalé |
+| GET | `challenges/{id}/leaderboard` | `{participants, finished, entries: [{rank, pseudo, score, duration_seconds, is_me}], me}` |
 
 **Flux SSE** (`config/sse.py`) : l'état courant est envoyé dès la connexion, puis à chaque changement (lecture en base toutes les `SSE_POLL_SECONDS`) ; commentaire `: ping` toutes les `SSE_HEARTBEAT_SECONDS` ; fermeture après `SSE_MAX_SECONDS` (le client se reconnecte après `retry` = `SSE_RETRY_MS` et reçoit l'état courant), sur un statut final, ou par `event: gone` si l'objet a disparu. Le client ferme le flux sur un statut final. Auth : JWT Bearer comme le reste de l'API — l'`EventSource` du navigateur n'envoie pas d'en-tête, utiliser un client SSE basé sur `fetch` (jamais de jeton dans l'URL). Pas d'événement par étape : le parcours est généré et revérifié d'un bloc. Production : gunicorn `gthread`, un flux ouvert occupe un thread (capacité = `WEB_CONCURRENCY` × `GUNICORN_THREADS`).
 
@@ -279,7 +296,7 @@ Le schéma OpenAPI (`/api/schema/`, copie versionnée `stem_learning_app/schema.
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-07 — Phase 1 (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours (schéma 1.1, essai réel), moteurs de correction, tentatives et synchro hors-ligne, progression, tâches périodiques, SSE, retours du frontend ; 548 tests verts.
+> Dernière mise à jour : 2026-11-07 — Phase 1 (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours (schéma 1.1, essai réel), moteurs de correction, tentatives et synchro hors-ligne, progression, tâches périodiques, SSE, retours du frontend. Phase 2 commencée : défis et modération (§5.4) ; 580 tests verts (SQLite et PostgreSQL).
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -292,7 +309,7 @@ Le schéma OpenAPI (`/api/schema/`, copie versionnée `stem_learning_app/schema.
 - ✅ Tentatives : démarrage, réponses corrigées avec feedback, indices, score, synchronisation hors-ligne idempotente.
 - ✅ Progression : maîtrise par chapitre, révision espacée par parcours, révision du jour, série de jours (`/api/progress/`).
 - ✅ Suivi en direct (SSE) de l'extraction et de la génération.
-- ❌ Défis.
+- ✅ Défis publics (vérifiés par le LLM) et privés (code), signalements, classement par défi, points de l'auteur (§5.4).
 
 ### Phase 0 — Assainissement ✅ (2026-11-06)
 - [x] Sécurité : `JWTAuthentication` + `IsAuthenticated` par défaut ; viewsets en lecture seule ; `process_document` réservé aux admins (POST) ; `process_exercise` (debug cassé) supprimé ; `correct_choice` retiré de `QCMSerializer`.
@@ -358,8 +375,9 @@ Réparations côté serveur (essais suivants, `gpt-4.1` + `generation.v3`, journ
 - [ ] Rejouer l'essai sur de vraies photos (manuscrit, mauvais éclairage) avant la mise en production.
 
 ### Phase 2 — V2
-- [ ] App `challenges` : défis publics (catalogue matière/chapitre/niveau) et privés (code/lien), chrono, indices on/off, notation, points auteur.
-- [ ] Modération : filtrage automatique LLM, signalements, déduplication des énoncés (`content_hash`).
+- [x] App `challenges` : défis publics (catalogue matière/chapitre/niveau) et privés (code), chrono, indices on/off, une tentative par élève corrigée en ligne, classement par défi (score puis durée), points auteur — 2026-11-07 (§5.4).
+- [x] Modération : vérification automatique des énoncés publics (`moderation.v1`), relance par la maintenance, signalements (masqué à 3), relecture dans l'admin, déduplication du catalogue par `content_hash` — 2026-11-07.
+- [ ] Essai réel de `moderation.v1` (faux positifs sur les prénoms fictifs des énoncés, faux négatifs sur les en-têtes de devoir) avant la mise en production.
 - [ ] Français & Anglais : `conjugation`, `free_text` + grading `llm_rubric` (résumé), référentiel chapitres.
 
 ### Phase 3 — V3

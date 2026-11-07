@@ -128,7 +128,7 @@ class TestScheduling:
 
         result = celery_app.tasks["ingestion.tasks.run_maintenance"].delay().get()
 
-        assert result == {"uploads": (0, 1), "generations": (0, 0)}
+        assert result == {"uploads": (0, 1), "generations": (0, 0), "moderations": 0}
 
     def test_maintenance_command(self, user, settings):
         make_upload(user, Upload.Status.READING, minutes_ago=30)

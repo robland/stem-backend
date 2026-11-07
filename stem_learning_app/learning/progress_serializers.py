@@ -11,6 +11,7 @@ class SummarySerializer(serializers.Serializer):
     attempts_finished = serializers.IntegerField()
     average_score = serializers.IntegerField(allow_null=True)
     streak_days = serializers.IntegerField(help_text="Jours consécutifs d'activité, jusqu'à aujourd'hui ou hier.")
+    author_points = serializers.IntegerField(help_text="Points gagnés avec mes défis (README §5.4).")
 
 
 class SubjectProgressSerializer(serializers.Serializer):

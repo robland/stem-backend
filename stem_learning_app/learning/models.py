@@ -69,6 +69,10 @@ class Attempt(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attempts")
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name="attempts")
     mode = models.CharField(max_length=10, choices=Mode.choices, default=Mode.SOLO)
+    # Défi relevé (mode « challenge ») : une seule tentative par élève et par défi.
+    challenge = models.ForeignKey(
+        "challenges.Challenge", on_delete=models.CASCADE, null=True, blank=True, related_name="attempts"
+    )
     started_at = models.DateTimeField()
     finished_at = models.DateTimeField(null=True, blank=True)
     # Score sur 100 (cf. README §5.2), calculé à chaque réponse.
@@ -79,6 +83,12 @@ class Attempt(models.Model):
 
     class Meta:
         ordering = ["-started_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "challenge"], condition=models.Q(challenge__isnull=False),
+                name="one_attempt_per_challenge",
+            ),
+        ]
 
     def __str__(self):
         return f"Tentative {self.id} — {self.user}"

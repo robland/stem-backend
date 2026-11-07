@@ -6,7 +6,7 @@ from .clients import get_client
 from .exceptions import LLMOutputInvalid
 from .prompts import latest_prompt
 from .statement import count_questions
-from .schemas import ExtractionOutput, GeneratedExercise
+from .schemas import ExtractionOutput, GeneratedExercise, ModerationOutput
 
 
 def extract_exercises(images, *, declared_level=""):
@@ -36,6 +36,15 @@ def extract_exercises(images, *, declared_level=""):
         if not e.errors:
             raise
         return extract(_correction_text(e.errors))
+
+
+def moderate_statement(statement):
+    """Énoncé → verdict avant publication au catalogue public. Renvoie un LLMResult[ModerationOutput]."""
+    return get_client().generate(
+        task="moderation",
+        prompt=latest_prompt("moderation").render(statement=statement),
+        output_schema=ModerationOutput,
+    )
 
 
 def exam_for(level):

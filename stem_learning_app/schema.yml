@@ -200,6 +200,236 @@ paths:
               schema:
                 $ref: '#/components/schemas/Register'
           description: ''
+  /api/challenges/:
+    get:
+      operationId: challenges_list
+      summary: Catalogue des défis publics, mes défis ou les défis rejoints
+      parameters:
+      - in: query
+        name: chapter
+        schema:
+          type: string
+          format: uuid
+        description: Chapitre (catalogue).
+      - name: cursor
+        required: false
+        in: query
+        description: La valeur du curseur de pagination.
+        schema:
+          type: string
+      - in: query
+        name: level
+        schema:
+          type: string
+        description: Niveau (catalogue).
+      - in: query
+        name: scope
+        schema:
+          type: string
+          enum:
+          - joined
+          - mine
+          - public
+        description: 'public (défaut) : catalogue des défis publics actifs ; mine
+          : mes défis (tous statuts) ; joined : les défis que j''ai commencés.'
+      - in: query
+        name: subject
+        schema:
+          type: string
+        description: Code de matière (catalogue).
+      tags:
+      - challenges
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedChallengeList'
+          description: ''
+    post:
+      operationId: challenges_create
+      description: 'Privé : actif tout de suite (code de partage). Public : `pending`
+        jusqu''à la vérification automatique de l''énoncé, puis `active` ou `rejected`
+        (suivre via GET).'
+      summary: Proposer un de mes parcours en défi
+      tags:
+      - challenges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChallengeCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChallengeCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeDetail'
+          description: ''
+        '400':
+          description: Parcours pas prêt, pas encore terminé, ou déjà au catalogue.
+  /api/challenges/{id}/:
+    get:
+      operationId: challenges_retrieve
+      summary: Détail d'un défi et son parcours sans les réponses
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) challenge.
+        required: true
+      tags:
+      - challenges
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeDetail'
+          description: ''
+  /api/challenges/{id}/attempts/:
+    post:
+      operationId: challenges_attempts_create
+      description: 'Une seule tentative par élève, corrigée en ligne (pas de synchro
+        hors-ligne). Réponses et indices : endpoints `attempts` habituels.'
+      summary: Relever un défi
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) challenge.
+        required: true
+      tags:
+      - challenges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeStart'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChallengeStart'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChallengeStart'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+          description: 'Défi déjà commencé : ma tentative existante.'
+        '400':
+          description: Défi indisponible, code invalide, ou défi dont je suis l'auteur.
+  /api/challenges/{id}/leaderboard/:
+    get:
+      operationId: challenges_leaderboard_retrieve
+      summary: Classement du défi
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) challenge.
+        required: true
+      tags:
+      - challenges
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+          description: ''
+  /api/challenges/{id}/report/:
+    post:
+      operationId: challenges_report_create
+      description: Le défi est masqué à partir de 3 signalements, en attendant une
+        relecture.
+      summary: Signaler un défi
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Un(une) Chaîne UUID identifiant ce(cette) challenge.
+        required: true
+      tags:
+      - challenges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChallengeReport'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChallengeReport'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: Signalement enregistré.
+        '200':
+          description: Déjà signalé par cet élève.
+        '400':
+          description: Défi dont je suis l'auteur.
+  /api/challenges/code/{code}/:
+    get:
+      operationId: challenges_code_retrieve
+      summary: Retrouver un défi par son code de partage
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9]{1,20}$
+        required: true
+      tags:
+      - challenges
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeDetail'
+          description: ''
+        '404':
+          description: Aucun défi actif avec ce code.
   /api/curriculum/chapters/:
     get:
       operationId: curriculum_chapters_list
@@ -849,6 +1079,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/ModeEnum'
           readOnly: true
+        challenge:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
         started_at:
           type: string
           format: date-time
@@ -875,6 +1110,7 @@ components:
             $ref: '#/components/schemas/StepState'
           readOnly: true
       required:
+      - challenge
       - current_step_id
       - exercise
       - finished_at
@@ -897,6 +1133,273 @@ components:
     BlankEnum:
       enum:
       - ''
+    Challenge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          readOnly: true
+        timed:
+          type: boolean
+          readOnly: true
+        hints_allowed:
+          type: boolean
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ChallengeStatusEnum'
+          readOnly: true
+        author:
+          type: string
+          readOnly: true
+          description: Pseudo de l'auteur.
+        is_author:
+          type: boolean
+          readOnly: true
+        participants:
+          type: integer
+          readOnly: true
+          description: Élèves ayant commencé le défi.
+        finished:
+          type: integer
+          readOnly: true
+          description: Élèves ayant terminé le défi.
+        code:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Code de partage ; visible par l'auteur seulement.
+        moderation_messages:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Raisons d'un refus de publication ; pour l'auteur seulement.
+        author_points:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: Points gagnés par l'auteur avec ce défi (10 par participant
+            qui termine, 50 au plus).
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - author_points
+      - chapter
+      - code
+      - created_at
+      - exam
+      - finished
+      - hints_allowed
+      - id
+      - is_author
+      - level
+      - moderation_messages
+      - participants
+      - status
+      - subject
+      - timed
+      - title
+      - visibility
+    ChallengeCreate:
+      type: object
+      properties:
+        exercise:
+          type: string
+          format: uuid
+          description: Parcours de l'élève, prêt et déjà terminé une fois.
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        timed:
+          type: boolean
+          default: false
+          description: Chrono affiché pendant la résolution.
+        hints_allowed:
+          type: boolean
+          default: true
+      required:
+      - exercise
+      - visibility
+    ChallengeDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCodeEnum'
+          readOnly: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          readOnly: true
+        chapter:
+          type: string
+          format: uuid
+          readOnly: true
+        exam:
+          type: string
+          readOnly: true
+          description: 'Examen visé : BEPC (collège) ou BAC (lycée).'
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          readOnly: true
+        timed:
+          type: boolean
+          readOnly: true
+        hints_allowed:
+          type: boolean
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ChallengeStatusEnum'
+          readOnly: true
+        author:
+          type: string
+          readOnly: true
+          description: Pseudo de l'auteur.
+        is_author:
+          type: boolean
+          readOnly: true
+        participants:
+          type: integer
+          readOnly: true
+          description: Élèves ayant commencé le défi.
+        finished:
+          type: integer
+          readOnly: true
+          description: Élèves ayant terminé le défi.
+        code:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Code de partage ; visible par l'auteur seulement.
+        moderation_messages:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Raisons d'un refus de publication ; pour l'auteur seulement.
+        author_points:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: Points gagnés par l'auteur avec ce défi (10 par participant
+            qui termine, 50 au plus).
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        content:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+          description: Parcours sans les réponses (comme GET /api/exercises/{id}/),
+            sans aucun indice si `hints_allowed` est faux ; null tant que le défi
+            n'est pas actif.
+        my_attempt:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+          description: Ma tentative sur ce défi (une seule) ; null sinon.
+      required:
+      - author
+      - author_points
+      - chapter
+      - code
+      - content
+      - created_at
+      - exam
+      - finished
+      - hints_allowed
+      - id
+      - is_author
+      - level
+      - moderation_messages
+      - my_attempt
+      - participants
+      - status
+      - subject
+      - timed
+      - title
+      - visibility
+    ChallengeReport:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/ChallengeReportReasonEnum'
+      required:
+      - reason
+    ChallengeReportReasonEnum:
+      enum:
+      - inappropriate
+      - personal_data
+      - wrong_content
+      - other
+      type: string
+      description: |-
+        * `inappropriate` - Contenu inapproprié
+        * `personal_data` - Données personnelles
+        * `wrong_content` - Correction fausse
+        * `other` - Autre
+    ChallengeStart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 'Généré par le client : rend l''appel idempotent.'
+        code:
+          type: string
+          description: Requis pour un défi privé.
+          maxLength: 20
+    ChallengeStatusEnum:
+      enum:
+      - pending
+      - active
+      - rejected
+      - hidden
+      type: string
+      description: |-
+        * `pending` - En vérification
+        * `active` - Actif
+        * `rejected` - Refusé
+        * `hidden` - Masqué (signalements)
     Chapter:
       type: object
       properties:
@@ -915,8 +1418,9 @@ components:
           maxLength: 200
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
       required:
       - id
       - level
@@ -1192,6 +1696,48 @@ components:
           maxLength: 20
       required:
       - step_id
+    Leaderboard:
+      type: object
+      properties:
+        participants:
+          type: integer
+        finished:
+          type: integer
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+          description: Score décroissant, puis durée, puis ordre d'arrivée.
+        me:
+          allOf:
+          - $ref: '#/components/schemas/LeaderboardEntry'
+          nullable: true
+          description: Ma place, même hors des premiers affichés.
+      required:
+      - entries
+      - finished
+      - me
+      - participants
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        pseudo:
+          type: string
+        score:
+          type: integer
+        duration_seconds:
+          type: integer
+          description: Du démarrage à la fin (heure du serveur).
+        is_me:
+          type: boolean
+      required:
+      - duration_seconds
+      - is_me
+      - pseudo
+      - rank
+      - score
     LevelEnum:
       enum:
       - 6e
@@ -1277,6 +1823,25 @@ components:
       description: |-
         * `solo` - Solo
         * `challenge` - Défi
+    PaginatedChallengeList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Challenge'
     PaginatedExerciseList:
       type: object
       required:
@@ -1372,14 +1937,6 @@ components:
       - review_today
       - subjects
       - summary
-    ReasonEnum:
-      enum:
-      - to_finish
-      - to_review
-      type: string
-      description: |-
-        * `to_finish` - to_finish
-        * `to_review` - to_review
     Register:
       type: object
       description: 'Seule donnée personnelle collectée : le téléphone. `pseudo` est
@@ -1410,7 +1967,7 @@ components:
       properties:
         reason:
           allOf:
-          - $ref: '#/components/schemas/ReasonEnum'
+          - $ref: '#/components/schemas/ReviewItemReasonEnum'
           description: |-
             to_finish : tentative commencée ; to_review : révision échue.
 
@@ -1435,6 +1992,14 @@ components:
       - exercise
       - last_score
       - reason
+    ReviewItemReasonEnum:
+      enum:
+      - to_finish
+      - to_review
+      type: string
+      description: |-
+        * `to_finish` - to_finish
+        * `to_review` - to_review
     SerieEnum:
       enum:
       - A
@@ -1546,8 +2111,12 @@ components:
         streak_days:
           type: integer
           description: Jours consécutifs d'activité, jusqu'à aujourd'hui ou hier.
+        author_points:
+          type: integer
+          description: Points gagnés avec mes défis (README §5.4).
       required:
       - attempts_finished
+      - author_points
       - average_score
       - exercises_done
       - streak_days
@@ -1750,6 +2319,14 @@ components:
         * `reading` - Lecture en cours
         * `extracted` - Énoncés extraits
         * `error` - Erreur
+    VisibilityEnum:
+      enum:
+      - public
+      - private
+      type: string
+      description: |-
+        * `public` - Public
+        * `private` - Privé
   securitySchemes:
     jwtAuth:
       type: http
