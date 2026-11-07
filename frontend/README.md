@@ -109,15 +109,23 @@ frontend/
 
 - Le contenu arrive au format du **schéma d'activités** (backend §6). Le valider avec `packages/content-schema` (Zod) ; une étape invalide affiche un état d'erreur propre et un bouton « Signaler », jamais un crash.
 - Tout texte est du **texte riche** : texte + `$...$` / `$$...$$` (KaTeX) + `\ce{...}`. **Ne jamais interpréter de HTML** (`dangerouslySetInnerHTML` interdit sur du contenu généré).
-- **Un renderer par `type` d'activité** dans `packages/activities`, interface commune :
+- **Un renderer par `type` d'activité** dans `packages/activities` (`definitions` dans `registry.tsx`), interface commune (`types.ts`) :
   ```ts
-  type ActivityProps<T> = {
-    activity: T;                       // payload sans réponse (mode en ligne)
-    onSubmit: (response: unknown) => void;
-    feedback?: { isCorrect: boolean; message?: string };
+  type RendererProps<A, R> = {
+    activity: A;                       // payload sans réponse (mode en ligne)
+    value: R | undefined;              // réponse contrôlée par le lecteur (bouton « Vérifier » dans sa barre)
+    onChange: (value: R) => void;
     disabled?: boolean;
+    details?: Record<string, unknown> | null; // `details` de l'API : marque les éléments justes / faux
+    seed: string;                      // id de l'étape : mélange stable (classement, appariement)
+  };
+  type ActivityDefinition<A, R> = {
+    Renderer; isComplete(activity, value): boolean; initial?(activity, seed): R;
+    serialize?(value): unknown;        // réponse au format backend README §5.1
+    ownsPrompt?: boolean;              // consigne rendue par le renderer (formule à compléter)
   };
   ```
+  (Remplace l'interface `onSubmit` initiale, 2026-11-07 : la réponse doit rester affichée et corrigeable après une erreur.)
 - Un `type` inconnu (version de schéma plus récente) → écran « Mets l'application à jour » pour cette étape.
 
 | `type` | Version | Renderer |
@@ -155,7 +163,7 @@ frontend/
 ## 7. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner complet jusqu'à la préparation du parcours ; 77 tests verts.
+> Dernière mise à jour : 2026-11-07 — Phase 1 web (branche `feature/backend-phase1`) : monorepo, design system, client API, schéma de contenu, auth + onboarding, scanner, lecteur de parcours et renderers des 13 types V1 (en ligne) ; 162 tests verts. Reste : hors-ligne, écran Progrès, Playwright.
 
 ### Lancer le frontend
 
@@ -178,6 +186,11 @@ Après un changement de dépendances : `docker compose run --rm --no-deps fronte
 - **Client API** : `openapi-typescript` (types) + `openapi-fetch` (client typé, ~6 kB) ; jeton d'accès en mémoire, refresh par cookie httpOnly, relance automatique sur 401 (un seul refresh à la fois).
 - **Schéma de contenu** : générateur maison (`packages/content-schema/scripts/generate.mjs`) plutôt que json-schema-to-zod (qui ne résout pas les `$ref`) : un schéma Zod nommé par `$defs`, unions discriminées par `type`, variantes publiques dérivées. `pnpm test` échoue si le fichier généré n'est pas à jour.
 - Nom de l'application : provisoire (`APP_NAME = "StemLearning"`), **à décider**.
+- **Saisie des formules : deux variantes développées pour être comparées** (décision du porteur du projet, à prendre après essai) — réglage « Saisie des formules » du Profil :
+  - **Simple** (par défaut) : champ texte + touches (x, x², xⁿ, √, a/b, parenthèses, π), expression rendue en direct dans la case `\placeholder{}` de la consigne ; ≈ 8 kB gzip.
+  - **MathLive** (`mathlive` 0.111.1, ≈ 229 kB gzip chargés au premier usage) : clavier mathématique ; valeur lue en ASCIIMath puis contrôlée par le même analyseur.
+  - Les deux envoient l'expression ASCII du contrat (§5.1). Critères d'évaluation proposés : rapidité de saisie sur téléphone d'entrée de gamme, erreurs de saisie, poids, compréhension par les élèves.
+- **Écrans lourds chargés à la demande** (scanner, lecteur) : bundle initial ≈ 133 kB gzip.
 
 ### Phase 1 — V1 Web (Maths + Physique-Chimie)
 - [x] Initialiser le monorepo (pnpm, Turborepo, TS strict, ESLint, Prettier, Vitest) — 2026-11-07.
@@ -192,10 +205,12 @@ Après un changement de dépendances : `docker compose run --rm --no-deps fronte
   - onglets par exercice trouvé, énoncé modifiable avec aperçu KaTeX en direct, matière / classe / chapitre (chapitre lu sur la feuille affiché), écarter, puis correction → validation → génération → écran de préparation (relance si échec, quota avec heure de reprise) ;
   - photo gardée **en mémoire** à côté de l'énoncé (perdue au rechargement : persistance avec `packages/offline`).
 - [x] `packages/activities` : `RichText` (texte + `$…$` / `$$…$$` + `\ce{}`), KaTeX et mhchem chargés à la demande (≈ 86 kB gzip hors bundle initial), jamais de HTML interprété — 2026-11-07.
-- [ ] Lecteur de parcours : intuition, rappels, étapes, indices, feedback, bilan. (Pour l'instant, `/parcours/:id` affiche le parcours prêt : titre, nombre d'étapes, énoncé.)
-- [ ] Renderers V1 communs : `mcq`, `true_false`, `short_answer`, `fill_blanks`, `matching`, `ordering`.
-- [ ] Renderers Maths : `formula_input` (MathLive), `graph_points` & `graph_parameters` (courbe animée), `variation_table`.
-- [ ] Renderers PC : `chem_balance`, `chem_formula`, `unit_conversion`.
+- [x] Lecteur de parcours (`/parcours/:id`, plein écran sans onglets) — 2026-11-07 : intro (énoncé, lecture audio) → intuition → rappels → une étape par écran → bilan (score, étapes, notion clé, « Refaire »). Tentative en ligne : `id` généré par le client et mémorisé sur l'appareil (reprise « où j'en étais », ou `?tentative=` depuis la révision du jour) ; indices demandés un par un à l'API (le 1ᵉʳ aussi, sinon il n'est pas décompté), coût affiché ; réponse renvoyée avec le même `client_uuid` après une coupure ; après une erreur, feedback ciblé, essais restants, réponse à modifier avant de renvoyer ; correction rédigée à la clôture. « Exercice similaire » et « Lancer un défi » désactivés (pas d'endpoint).
+- [x] Renderers V1 des 13 types — 2026-11-07 :
+  - communs : `mcq`, `true_false`, `short_answer` (clavier décimal en numérique), `fill_blanks` (trous dans le texte), `matching` (**toucher-toucher** au lieu du glisser-déposer : petits écrans, clavier), `ordering` (**flèches** monter/descendre, ordre de départ mélangé de façon stable) ;
+  - Maths : `formula_input` (deux saisies **en évaluation**, cf. ci-dessous), `graph_points` & `graph_parameters` (**SVG maison** plutôt que JSXGraph : points à glisser doublés de champs numériques, curseurs et courbe redessinée), `variation_table` (signe et flèche par intervalle) ;
+  - PC : `chem_balance` (coefficients + compteur d'atomes et de charges en direct), `chem_formula` (aperçu `\ce{}`), `unit_conversion` (texte envoyé tel quel, lu par l'API).
+  - Analyseurs partagés dans `packages/activities/src/math/` : expressions (syntaxe §5.1, aperçu LaTeX, évaluation pour les courbes) et formules chimiques (atomes, charges, hydrates) — base de la future correction hors-ligne.
 - [ ] `packages/grading` (hors-ligne) + `packages/offline` (IndexedDB, file de synchro) + PWA.
 - [ ] Écran Progrès (maîtrise par chapitre, révision du jour).
 - [ ] Tests : Vitest + Testing Library (renderers, grading), Playwright (parcours scanner → résolution).

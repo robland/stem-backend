@@ -333,6 +333,9 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
   - `POST auth/login` : la réponse annonce `refresh` alors que la vue le retire (cookie) ; les champs `readOnly` (`access`) apparaissent aussi dans le type du corps de requête.
   - Téléphone : `normalize_phone` ne retire que espaces, points et tirets ; `06 123 45 67` et `+242 06 123 45 67` créent deux comptes distincts. Décider d'un format canonique (indicatif +242 ajouté ou retiré).
   - Pas de liste de séries côté API (`serie` en texte libre) : liste à figer pour la validation et le formulaire.
+  - Lecteur : pas d'endpoint pour retrouver la tentative en cours d'un parcours (le front mémorise son `id` sur l'appareil ; changer d'appareil fait repartir de zéro, sauf via `review_today`) → proposer `GET exercises/{id}/attempts?finished=false` ou `current_attempt` dans `ExerciseDetail`.
+  - Lecteur : un 3ᵉ indice déjà consulté ne peut pas être réaffiché à la reprise (il n'est donné que par `POST hints`, qui refuse ensuite) → exposer les indices déjà obtenus dans `GET attempts/{id}`.
+  - Bilan : « Exercice similaire » sans endpoint.
 
 ### Essai réel des prompts (2026-11-07)
 
