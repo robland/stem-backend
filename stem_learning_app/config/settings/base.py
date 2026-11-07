@@ -199,6 +199,7 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
         'SubjectCodeEnum': 'curriculum.choices.SubjectCode',
         'LevelEnum': 'curriculum.choices.Level',
+        'SerieEnum': 'curriculum.choices.Serie',
     },
 }
 

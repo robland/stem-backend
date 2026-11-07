@@ -1,4 +1,6 @@
 from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from pydantic import TypeAdapter, ValidationError as PydanticValidationError
 from rest_framework import serializers
 
@@ -56,8 +58,13 @@ class UploadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+@extend_schema_field(OpenApiTypes.BINARY)
+class UploadFileField(serializers.FileField):
+    """Fichier envoyé en multipart (sans ce typage, le schéma l'annonce comme une URL)."""
+
+
 class UploadCreateSerializer(serializers.Serializer):
-    file = serializers.FileField(help_text="Photo (JPEG, PNG, WebP) ou PDF.")
+    file = UploadFileField(help_text="Photo (JPEG, PNG, WebP) ou PDF.")
 
     def validate_file(self, value):
         if value.size > settings.UPLOAD_MAX_BYTES:

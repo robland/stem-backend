@@ -67,15 +67,36 @@ class TestRegister:
         assert response.status_code == 400
         assert "phone" in response.data
 
-    def test_rejects_duplicate_phone_after_normalization(self, api_client, user):
+    @pytest.mark.parametrize("phone", ["+242 06 123 45 67", "06 123 45 67", "061234567", "00242061234567", "242061234567"])
+    def test_rejects_duplicate_phone_after_normalization(self, api_client, user, phone):
         response = api_client.post(
             reverse("register"),
-            {"phone": "+242 06 123 45 67", "pseudo": "autre", "password": PASSWORD, "level": "3e"},
+            {"phone": phone, "pseudo": "autre", "password": PASSWORD, "level": "3e"},
             format="json",
         )
 
         assert response.status_code == 400
         assert "phone" in response.data
+
+    def test_national_number_is_stored_in_international_format(self, api_client):
+        response = api_client.post(
+            reverse("register"),
+            {"phone": "05.555.66.77", "pseudo": "kimpa", "password": PASSWORD, "level": "3e"},
+            format="json",
+        )
+
+        assert response.status_code == 201
+        assert User.objects.get(pseudo="kimpa").phone == "+242055556677"
+
+    def test_rejects_unknown_serie(self, api_client):
+        response = api_client.post(
+            reverse("register"),
+            {"phone": "+242061112233", "pseudo": "kimpa", "password": PASSWORD, "level": "Tle", "serie": "B"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "serie" in response.data
 
     def test_rejects_weak_password(self, api_client):
         response = api_client.post(
@@ -98,6 +119,12 @@ class TestLogin:
         cookie = response.cookies[COOKIE]
         assert cookie["httponly"]
         assert cookie["path"] == settings.REFRESH_COOKIE_PATH
+
+    @pytest.mark.parametrize("phone", ["06 123 45 67", "+242 06 123 45 67", "00242061234567"])
+    def test_any_writing_of_the_number_logs_in(self, api_client, user, phone):
+        response = api_client.post(reverse("login"), {"phone": phone, "password": PASSWORD}, format="json")
+
+        assert response.status_code == 200
 
     def test_rejects_wrong_password(self, api_client, user):
         response = api_client.post(reverse("login"), {"phone": user.phone, "password": "faux"}, format="json")

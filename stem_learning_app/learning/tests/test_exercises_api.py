@@ -1,6 +1,6 @@
 import pytest
 
-from curriculum.models import Subject
+from curriculum.models import Chapter, Subject
 from learning.models import Exercise
 from llm.schemas import SCHEMA_VERSION
 from llm.tests.factories import generated_exercise, step
@@ -31,6 +31,19 @@ def test_list_only_own_exercises(auth_client, user, other_user):
     assert response.status_code == 200
     assert [e["id"] for e in response.data["results"]] == [str(mine.id)]
     assert "content" not in response.data["results"][0]
+
+
+def test_list_filtered_by_chapter(auth_client, user):
+    subject = Subject.objects.get(code="maths")
+    chapter = Chapter.objects.create(subject=subject, level="3e", name="Calcul littéral", order=1)
+    in_chapter = make_exercise(user)
+    Exercise.objects.filter(id=in_chapter.id).update(chapter=chapter)
+    make_exercise(user)
+
+    response = auth_client.get(URL, {"chapter": chapter.id})
+
+    assert [e["id"] for e in response.data["results"]] == [str(in_chapter.id)]
+    assert auth_client.get(URL, {"chapter": "abc"}).status_code == 400
 
 
 def test_list_is_paginated(auth_client, user):

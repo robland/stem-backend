@@ -5,15 +5,27 @@ from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 from django.utils import timezone
 
-from curriculum.choices import Level
+from curriculum.choices import Level, Serie
 
 
 def normalize_phone(phone):
-    return re.sub(r"[\s.-]", "", phone or "")
+    """Format international (E.164) : `06 123 45 67`, `00242…` et `242…` deviennent `+242061234567`."""
+    phone = re.sub(r"[\s.()-]", "", phone or "")
+    if phone.startswith("00"):
+        phone = "+" + phone[2:]
+    elif re.fullmatch(r"0\d{8}", phone):  # numéro national congolais : 9 chiffres, le 0 est conservé
+        phone = "+242" + phone
+    elif re.fullmatch(r"242\d{9}", phone):
+        phone = "+" + phone
+    return phone
 
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
+
+    def get_by_natural_key(self, phone):
+        # Connexion : le numéro saisi peut être au format national ou avec espaces.
+        return super().get_by_natural_key(normalize_phone(phone))
 
     def create_user(self, phone, password=None, **extra_fields):
         if not phone:
@@ -41,8 +53,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField(max_length=16, unique=True)
     pseudo = models.CharField(max_length=30, unique=True)
     level = models.CharField(max_length=4, choices=Level.choices, blank=True)
-    # Série du lycée (A, C, D…) — liste exacte à confirmer, d'où un champ libre.
-    serie = models.CharField(max_length=10, blank=True)
+    serie = models.CharField(max_length=10, choices=Serie.choices, blank=True)  # lycée uniquement
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

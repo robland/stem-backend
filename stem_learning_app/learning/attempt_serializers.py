@@ -13,6 +13,10 @@ class StepStateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=[StepStatus.PENDING, StepStatus.SUCCEEDED, StepStatus.FAILED])
     wrong_answers = serializers.IntegerField()
     hints_used = serializers.IntegerField()
+    hints = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="Indices déjà obtenus (texte riche), du 1er au dernier : à réafficher à la reprise.",
+    )
     score = serializers.IntegerField(help_text="Sur 100 : 100 − 20 par indice − 20 par erreur ; 0 si échouée.")
 
 

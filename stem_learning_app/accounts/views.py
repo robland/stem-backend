@@ -1,5 +1,5 @@
 from django.conf import settings
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import RetrieveUpdateAPIView
@@ -10,7 +10,14 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from accounts.serializer import RegisterSerializer, MeSerializer
+from accounts.serializer import (
+    AccessTokenSerializer,
+    LoginSerializer,
+    MeSerializer,
+    RegisterSerializer,
+    TokenRefreshRequestSerializer,
+    TokenRefreshResponseSerializer,
+)
 
 
 def set_refresh_cookie(response, refresh):
@@ -36,6 +43,10 @@ def delete_refresh_cookie(response):
 class LoginView(TokenObtainPairView):
     """Renvoie l'access token ; le refresh token est posé en cookie httpOnly."""
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: AccessTokenSerializer, 401: OpenApiResponse(description="Identifiants invalides.")},
+    )
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         refresh = response.data.pop("refresh")
@@ -49,6 +60,13 @@ class RefreshView(TokenRefreshView):
     Le nouveau refresh token (rotation) est renvoyé par le même canal.
     """
 
+    @extend_schema(
+        request=TokenRefreshRequestSerializer,
+        responses={
+            200: TokenRefreshResponseSerializer,
+            401: OpenApiResponse(description="Refresh absent, expiré ou invalidé."),
+        },
+    )
     def post(self, request, *args, **kwargs):
         refresh = request.data.get("refresh")
         from_cookie = not refresh

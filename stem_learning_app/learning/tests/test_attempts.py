@@ -90,6 +90,39 @@ class TestStart:
         assert answer(other_client, attempt, "s1", RIGHT["s1"]).status_code == 404
 
 
+class TestCurrentAttempt:
+    def current(self, client, exercise):
+        return client.get(f"/api/exercises/{exercise.id}/").data["current_attempt"]
+
+    def test_none_before_starting(self, auth_client, exercise):
+        assert self.current(auth_client, exercise) is None
+
+    def test_unfinished_attempt_is_found_from_another_device(self, auth_client, attempt, exercise):
+        answer(auth_client, attempt, "s1", RIGHT["s1"])
+
+        assert self.current(auth_client, exercise) == str(attempt.id)
+
+    def test_latest_unfinished_attempt(self, auth_client, attempt, exercise):
+        later = Attempt.objects.create(user=attempt.user, exercise=exercise, started_at=timezone.now())
+        Attempt.objects.filter(id=attempt.id).update(started_at=timezone.now() - timedelta(hours=1))
+
+        assert self.current(auth_client, exercise) == str(later.id)
+
+    def test_none_once_finished(self, auth_client, attempt, exercise):
+        answer(auth_client, attempt, "s1", RIGHT["s1"])
+        answer(auth_client, attempt, "s2", RIGHT["s2"])
+
+        assert self.current(auth_client, exercise) is None
+
+    def test_abandoned_before_a_finished_attempt_is_not_resumed(self, auth_client, attempt, exercise):
+        Attempt.objects.filter(id=attempt.id).update(started_at=timezone.now() - timedelta(days=1))
+        Attempt.objects.create(
+            user=attempt.user, exercise=exercise, started_at=timezone.now(), finished_at=timezone.now()
+        )
+
+        assert self.current(auth_client, exercise) is None
+
+
 class TestAnswers:
     def test_correct_answer_closes_step(self, auth_client, attempt):
         response = answer(auth_client, attempt, "s1", RIGHT["s1"])
@@ -97,7 +130,7 @@ class TestAnswers:
         assert response.status_code == 201
         assert response.data["is_correct"] is True
         assert response.data["step"] == {
-            "step_id": "s1", "status": "succeeded", "wrong_answers": 0, "hints_used": 0, "score": 100,
+            "step_id": "s1", "status": "succeeded", "wrong_answers": 0, "hints_used": 0, "hints": [], "score": 100,
         }
         assert response.data["explanation"]
         assert response.data["attempt"]["current_step_id"] == "s2"
@@ -213,6 +246,24 @@ class TestHints:
         data = auth_client.get(f"/api/attempts/{attempt.id}/").data
         assert data["hints_used"] == 3
         assert data["steps"][0]["hints_used"] == 3
+
+    def test_obtained_hints_are_shown_again_on_resume(self, auth_client, attempt):
+        steps = attempt.exercise.content["steps"]
+        for _ in range(3):
+            hint(auth_client, attempt, "s1")
+
+        data = auth_client.get(f"/api/attempts/{attempt.id}/").data
+
+        # Le 3ᵉ indice, absent du contenu public, reste disponible pour l'élève qui l'a obtenu.
+        assert data["steps"][0]["hints"] == steps[0]["hints"]
+        assert data["steps"][1]["hints"] == []
+
+    def test_offline_hints_are_shown_too(self, auth_client, attempt):
+        answer(auth_client, attempt, "s1", WRONG["s1"], hints_used=2)
+
+        data = auth_client.get(f"/api/attempts/{attempt.id}/").data
+
+        assert data["steps"][0]["hints"] == attempt.exercise.content["steps"][0]["hints"][:2]
 
     def test_hint_only_for_current_step(self, auth_client, attempt):
         assert hint(auth_client, attempt, "s2").status_code == 400

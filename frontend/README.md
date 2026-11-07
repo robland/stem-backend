@@ -47,7 +47,7 @@ Le bouton **Scanner** est central et mis en avant (action principale).
 | **Onboarding** (< 1 min) | Téléphone + mot de passe + pseudo → niveau (6e→Tle) et série → matières → objectif (devoirs / BEPC / BAC) → exercice de démonstration |
 | **Accueil** | « Continuer » (parcours en cours) · « Révision du jour » · « Défis reçus » · progression de la semaine (série de jours, XP) |
 | **Scanner** | Photo → recadrage → envoi (compressé) → détection des exercices (« 3 exercices trouvés, lequel ? ») → **vérification/correction de l'énoncé** (aperçu LaTeX en direct) → matière/chapitre (modifiable) → attente animée → parcours |
-| **Résolution** | Barre de progression des étapes en haut · carte Intuition · cartes Rappel · une activité par écran · 💡 Indice · feedback immédiat animé · Bilan (réussites, erreurs, notion clé) → « Refaire » / « Exercice similaire » / « Lancer un défi » |
+| **Résolution** | Barre de progression des étapes en haut · carte Intuition · cartes Rappel · une activité par écran · 💡 Indice · feedback immédiat animé · Bilan (réussites, erreurs, notion clé) → « Refaire » / « Lancer un défi » (« Exercice similaire » abandonné, décision du 2026-11-07) |
 | **Défis** (V2) | Catalogue filtré matière/chapitre/niveau · rejoindre par code · créer (public/privé, chrono, indices on/off) · classement entre amis / par niveau (jamais global ouvert) |
 | **Progrès** | Maîtrise par chapitre (non acquis / en cours / maîtrisé) · points faibles · révision espacée |
 | **Profil** | Pseudo, niveau/série, préférences d'accessibilité, gestion des contenus hors-ligne (espace utilisé, suppression), déconnexion |

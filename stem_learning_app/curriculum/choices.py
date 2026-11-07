@@ -11,7 +11,15 @@ class Level(models.TextChoices):
     TERMINALE = "Tle", "Terminale"
 
 
-COLLEGE_LEVELS = {Level.SIXIEME, Level.CINQUIEME, Level.QUATRIEME, Level.TROISIEME}
+class Serie(models.TextChoices):
+    """Séries du lycée (liste validée par le porteur du projet le 2026-11-07)."""
+
+    A = "A", "A"
+    C = "C", "C"
+    D = "D", "D"
+
+
+COLLEGE_LEVELS ={Level.SIXIEME, Level.CINQUIEME, Level.QUATRIEME, Level.TROISIEME}
 
 
 class SubjectCode(models.TextChoices):

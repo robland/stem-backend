@@ -118,21 +118,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/Login'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/Login'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/Login'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenObtainPair'
+                $ref: '#/components/schemas/AccessToken'
           description: ''
+        '401':
+          description: Identifiants invalides.
   /api/auth/logout/:
     post:
       operationId: auth_logout_create
@@ -156,21 +158,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/TokenRefreshRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/TokenRefreshRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
-        required: true
+              $ref: '#/components/schemas/TokenRefreshRequest'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenRefresh'
+                $ref: '#/components/schemas/TokenRefreshResponse'
           description: ''
+        '401':
+          description: Refresh absent, expiré ou invalidé.
   /api/auth/register/:
     post:
       operationId: auth_register_create
@@ -341,6 +344,12 @@ paths:
       operationId: exercises_list
       summary: Mes parcours
       parameters:
+      - in: query
+        name: chapter
+        schema:
+          type: string
+          format: uuid
+        description: Uniquement les parcours de ce chapitre.
       - name: cursor
         required: false
         in: query
@@ -767,6 +776,13 @@ paths:
             comme dans `GET /api/uploads/{id}/`.'
 components:
   schemas:
+    AccessToken:
+      type: object
+      properties:
+        access:
+          type: string
+      required:
+      - access
     AnswerCreate:
       type: object
       properties:
@@ -899,9 +915,8 @@ components:
           maxLength: 200
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
       required:
       - id
       - level
@@ -999,14 +1014,23 @@ components:
         content:
           type: object
           additionalProperties: {}
+          nullable: true
           readOnly: true
           description: 'Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json)
             sans les champs qui donnent la réponse : activity.answer, common_mistakes,
             explanation, dernier indice. null tant que le parcours n''est pas prêt.'
+        current_attempt:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+          description: 'Tentative commencée et non finie à reprendre (détail : GET
+            /api/attempts/{id}/) ; null sinon.'
       required:
       - chapter
       - content
       - created_at
+      - current_attempt
       - error_message
       - exam
       - generation_status
@@ -1059,14 +1083,23 @@ components:
         content:
           type: object
           additionalProperties: {}
+          nullable: true
           readOnly: true
           description: 'Parcours (README §6, JSON Schema dans schemas/exercise-content.schema.json)
             sans les champs qui donnent la réponse : activity.answer, common_mistakes,
             explanation, dernier indice. null tant que le parcours n''est pas prêt.'
+        current_attempt:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+          description: 'Tentative commencée et non finie à reprendre (détail : GET
+            /api/attempts/{id}/) ; null sinon.'
       required:
       - chapter
       - content
       - created_at
+      - current_attempt
       - error_message
       - exam
       - generation_status
@@ -1177,6 +1210,18 @@ components:
         * `2nde` - 2nde
         * `1re` - 1re
         * `Tle` - Terminale
+    Login:
+      type: object
+      description: Documentation OpenAPI de `auth/login` (la validation reste celle
+        de SimpleJWT).
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - phone
     Mastery:
       type: object
       properties:
@@ -1213,8 +1258,9 @@ components:
           - $ref: '#/components/schemas/LevelEnum'
           - $ref: '#/components/schemas/BlankEnum'
         serie:
-          type: string
-          maxLength: 10
+          oneOf:
+          - $ref: '#/components/schemas/SerieEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         date_joined:
           type: string
           format: date-time
@@ -1296,8 +1342,9 @@ components:
           - $ref: '#/components/schemas/LevelEnum'
           - $ref: '#/components/schemas/BlankEnum'
         serie:
-          type: string
-          maxLength: 10
+          oneOf:
+          - $ref: '#/components/schemas/SerieEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         date_joined:
           type: string
           format: date-time
@@ -1350,8 +1397,9 @@ components:
         level:
           $ref: '#/components/schemas/LevelEnum'
         serie:
-          type: string
-          maxLength: 10
+          oneOf:
+          - $ref: '#/components/schemas/SerieEnum'
+          - $ref: '#/components/schemas/BlankEnum'
       required:
       - level
       - password
@@ -1387,6 +1435,16 @@ components:
       - exercise
       - last_score
       - reason
+    SerieEnum:
+      enum:
+      - A
+      - C
+      - D
+      type: string
+      description: |-
+        * `A` - A
+        * `C` - C
+        * `D` - D
     StateEnum:
       enum:
       - non_acquis
@@ -1408,10 +1466,17 @@ components:
           type: integer
         hints_used:
           type: integer
+        hints:
+          type: array
+          items:
+            type: string
+          description: 'Indices déjà obtenus (texte riche), du 1er au dernier : à
+            réafficher à la reprise.'
         score:
           type: integer
           description: 'Sur 100 : 100 − 20 par indice − 20 par erreur ; 0 si échouée.'
       required:
+      - hints
       - hints_used
       - score
       - status
@@ -1612,37 +1677,24 @@ components:
             $ref: '#/components/schemas/SyncAttemptResult'
       required:
       - attempts
-    TokenObtainPair:
+    TokenRefreshRequest:
       type: object
       properties:
-        phone:
-          type: string
-          writeOnly: true
-        password:
-          type: string
-          writeOnly: true
-        access:
-          type: string
-          readOnly: true
         refresh:
           type: string
-          readOnly: true
-      required:
-      - access
-      - password
-      - phone
-      - refresh
-    TokenRefresh:
+          description: Mobile uniquement ; le web l'envoie par cookie httpOnly (body
+            vide).
+    TokenRefreshResponse:
       type: object
       properties:
         access:
           type: string
-          readOnly: true
         refresh:
           type: string
+          description: 'Nouveau refresh, seulement s''il a été envoyé dans le body
+            (sinon : cookie).'
       required:
       - access
-      - refresh
     Upload:
       type: object
       properties:
@@ -1682,7 +1734,7 @@ components:
       properties:
         file:
           type: string
-          format: uri
+          format: binary
           description: Photo (JPEG, PNG, WebP) ou PDF.
       required:
       - file

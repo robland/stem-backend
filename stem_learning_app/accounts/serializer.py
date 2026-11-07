@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from .models import User, normalize_phone
 
-PHONE_RE = re.compile(r"^\+?[0-9]{8,15}$")
+PHONE_RE = re.compile(r"^\+[0-9]{8,15}$")  # après normalisation au format international
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -42,6 +42,30 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+class LoginSerializer(serializers.Serializer):
+    """Documentation OpenAPI de `auth/login` (la validation reste celle de SimpleJWT)."""
+
+    phone = serializers.CharField()
+    password = serializers.CharField()
+
+
+class AccessTokenSerializer(serializers.Serializer):
+    access = serializers.CharField()
+
+
+class TokenRefreshRequestSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        required=False, help_text="Mobile uniquement ; le web l'envoie par cookie httpOnly (body vide)."
+    )
+
+
+class TokenRefreshResponseSerializer(serializers.Serializer):
+    access = serializers.CharField()
+    refresh = serializers.CharField(
+        required=False, help_text="Nouveau refresh, seulement s'il a été envoyé dans le body (sinon : cookie)."
+    )
 
 
 class MeSerializer(serializers.ModelSerializer):

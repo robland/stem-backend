@@ -16,7 +16,7 @@ Un élève **photographie son exercice** ; l'application **ne donne pas la répo
 |---|---|
 | Public | Élèves de **collège et lycée** |
 | Programme | **République du Congo** (Afrique francophone) — préparation **BEPC** (fin de 3e) et **BAC** (Terminale) |
-| Niveaux | `6e`, `5e`, `4e`, `3e`, `2nde`, `1re`, `Tle` (+ série au lycée : A, C, D… — liste exacte à confirmer) |
+| Niveaux | `6e`, `5e`, `4e`, `3e`, `2nde`, `1re`, `Tle` (+ série au lycée : `A`, `C` ou `D`, liste validée le 2026-11-07) |
 | Matières (cible) | Maths, Physique-Chimie, SVT, Anglais (grammaire, orthographe, conjugaison), Français (conjugaison, résumé, dissertation), Histoire-Géographie (révisions) |
 | Langue | **Français uniquement** (interface et contenus générés ; l'anglais n'existe qu'en tant que matière) |
 | Modèle économique | **Gratuit** → maîtriser le coût LLM (quotas, cache, déduplication) |
@@ -90,7 +90,7 @@ stem_learning_app/
 
 | Entité | Champs principaux | Notes |
 |---|---|---|
-| `User` | `phone` (unique, identifiant de connexion), `pseudo` (unique, affiché), `level`, `serie` (nullable), `password` | **Aucun autre champ personnel.** Supprimer `first_name`/`last_name`/`email` de l'usage. |
+| `User` | `phone` (unique, identifiant de connexion, format international `+242…`), `pseudo` (unique, affiché), `level`, `serie` (`A` / `C` / `D` ou vide), `password` | **Aucun autre champ personnel.** Supprimer `first_name`/`last_name`/`email` de l'usage. |
 | `Subject` | `code` (`maths`, `physique_chimie`, `svt`, `francais`, `anglais`, `histoire_geo`), `name` | Référentiel figé (fixture) |
 | `Chapter` | `subject`, `level`, `name`, `order` | Unicité `(subject, level, name)` ; fixture du programme congolais |
 | `Upload` | `user`, `file`, `file_hash`, `status`, `created_at` | Hash unique **par utilisateur**. **Fichier supprimé après validation de l'extraction** (il peut contenir nom/écriture de l'élève). |
@@ -149,7 +149,8 @@ Règles :
 
 - **Parcours guidé** : les étapes se font **dans l'ordre** ; seule l'étape en cours accepte réponses et indices.
 - Une étape est **close** quand elle est réussie, ou **échouée** après `ATTEMPT_MAX_WRONG_ANSWERS` (3) réponses fausses. La correction rédigée (`explanation`) n'est renvoyée qu'à la clôture.
-- **Indices** : `POST attempts/{id}/hints` donne le niveau suivant (1 → 3) ; le 3ᵉ n'est disponible que par là (absent du contenu public). Hors-ligne, le nombre d'indices consultés est transmis avec chaque réponse (`hints_used`, on garde le maximum).
+- **Indices** : `POST attempts/{id}/hints` donne le niveau suivant (1 → 3) ; le 3ᵉ n'est disponible que par là (absent du contenu public). Les indices déjà obtenus sont renvoyés dans l'état de chaque étape (`steps[].hints`) pour être réaffichés à la reprise. Hors-ligne, le nombre d'indices consultés est transmis avec chaque réponse (`hints_used`, on garde le maximum).
+- **Reprise** : `GET exercises/{id}` donne `current_attempt`, la tentative non finie la plus récente (sauf si une tentative finie l'a suivie, même règle que `to_finish` §5.3) ; elle se reprend ainsi depuis n'importe quel appareil.
 - **Score d'une étape** (sur 100) : réussie → `max(0, 100 − 20 × indices − 20 × réponses fausses)` ; échouée → 0. **Score de la tentative** = moyenne des étapes (arrondie) ; `finished_at` quand toutes les étapes sont closes.
 - **Hors-ligne** : le client génère l'`id` de la tentative et le `client_uuid` de chaque réponse ; `POST sync` rejoue les réponses par `answered_at` (horodatages futurs ramenés à maintenant), **recorrige tout côté serveur** et ignore tout verdict envoyé par le client. Un renvoi ne crée aucun doublon (`duplicate`) ; une réponse refusée (`rejected` + `reason`) ne bloque pas les suivantes. Limites : 50 tentatives et 100 réponses par tentative par appel.
 
@@ -172,7 +173,7 @@ Règles :
 - Les validateurs vérifient la **cohérence interne** (bonne réponse parmi les options, trous ↔ réponses, permutation, un coefficient par espèce, flèches ↔ signes…). Une réponse invalide du LLM est relancée une fois avec la liste des erreurs, puis passe en `error`.
 
 ### 6.1 Texte riche
-Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX inline `$...$` / bloc `$$...$$` + chimie via `\ce{...}` (mhchem). **Pas de HTML** (risque XSS) — le prompt actuel qui génère du HTML doit être abandonné. Les backslashes LaTeX sont normaux (`\frac`) : le hack `//` actuel est **interdit**, les *structured outputs* garantissent l'échappement JSON.
+Toutes les chaînes affichées sont du **texte riche** : texte simple + LaTeX inline `$...$` / bloc `$$...$$` + chimie via `\ce{...}` (mhchem). **Pas de HTML** (risque XSS) : `RichText` le refuse. Les backslashes LaTeX sont normaux (`\frac`) : les *structured outputs* garantissent l'échappement JSON, aucun remplacement de `\` par `//` (pratique de l'ancien prompt, interdite). Dans la sortie du LLM (`LLMRichText`), toute notation mathématique doit être dans `$…$` ou `\ce{}` ; la saisie des élèves reste souple.
 
 ### 6.2 Structure d'un parcours (`schema_version: "1.1"`)
 
@@ -221,7 +222,7 @@ Chaque activité porte `type`, `grading` et `prompt` (consigne, texte riche).
 | `fill_blanks` | toutes | `text` avec `{{1}}`…, `answer.blanks[{id, accepted[]}]` | normalized_text | V1 |
 | `matching` | toutes | `left[{id, content}]`, `right[…]`, `answer.pairs[{left_id, right_id}]` | exact | V1 |
 | `ordering` | toutes | `items[{id, content}]` (mélangés par le client), `answer.order[ids]` | exact | V1 |
-| `formula_input` | Maths, PC | `prompt` avec exactement un `\placeholder{}`, `answer.expression`, `answer.variables`, `answer.form` (`any` / `expanded` / `factored` / `irreducible_fraction`) | symbolic | V1 |
+| `formula_input` | Maths, PC | `prompt` avec exactement un `\placeholder{}`, `answer.expression`, `answer.variables`, `answer.form` (`any` / `expanded` / `factored` / `irreducible_fraction`), `answer.source` (expression de départ recopiée de l'énoncé, obligatoire si `form` ≠ `any`, sinon `null`) | symbolic | V1 |
 | `graph_points` | Maths, PC | `axes`, `points_to_place[x]`, `tolerance`, `answer.function`, `answer.points[{x, y}]` | numeric | V1 |
 | `graph_parameters` | Maths, PC | `axes`, `function` paramétrée (`a*x + b`), `sliders[{name, min, max, step, initial}]`, `tolerance`, `answer.values[{name, value}]` | numeric | V1 |
 | `variation_table` | Maths | `x_values` (texte riche), `answer.signs` (`+`/`-`), `answer.arrows` (`up`/`down`), un par intervalle, `answer.function` (optionnel) | exact | V1 |
@@ -248,8 +249,10 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| POST | `auth/register` | `{phone, pseudo, password, level, serie?}` |
-| POST | `auth/login` / `auth/refresh` / `auth/logout` | |
+| POST | `auth/register` | `{phone, pseudo, password, level, serie?}` ; `phone` enregistré au format international (`06 123 45 67`, `00242…` → `+242061234567`), toute écriture acceptée aussi au login ; `serie` ∈ `SerieEnum` (`A`, `C`, `D`) |
+| POST | `auth/login` | `{phone, password}` → `{access}` ; refresh posé en cookie httpOnly |
+| POST | `auth/refresh` | body vide (web, refresh lu dans le cookie) ou `{refresh}` (mobile) → `{access}` (+ `refresh` si reçu dans le body) ; rotation |
+| POST | `auth/logout` | blacklist du refresh (body ou cookie), suppression du cookie → `204` |
 | GET/PATCH | `me` | niveau, série, pseudo |
 | GET | `curriculum/subjects`, `curriculum/chapters?subject=&level=` | référentiel |
 | POST | `uploads` | multipart `file` (JPEG/PNG/WebP/PDF ≤ 4 pages, ≤ 10 Mo) → `201` upload ; `200` si le même document a déjà été envoyé (idempotent, hors quota) ; `429` + `Retry-After` si quota journalier atteint |
@@ -259,9 +262,9 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 | PATCH / DELETE | `extracted-exercises/{id}` | correction (`statement`, `subject`, `level`, `chapter`) / écarter un énoncé — refusé (`400`) une fois validé |
 | POST | `extracted-exercises/{id}/validate` | fige l'énoncé (matière et niveau requis) ; fichier d'origine supprimé quand tous les énoncés sont validés |
 | POST | `extracted-exercises/{id}/generate` | énoncé validé requis → `202` génération lancée ; `200` parcours existant ou repris du cache ; `400` matière non ouverte ; `429` quota journalier. Réponse = parcours (`id`, `generation_status`…) |
-| GET | `exercises` (pagination par curseur, 20) / `exercises/{id}` / `exercises/{id}/offline` | cf. §6.4 ; `content` vaut `null` tant que `generation_status` ≠ `ready` |
+| GET | `exercises?chapter=` (pagination par curseur, 20 ; filtre facultatif par chapitre) / `exercises/{id}` / `exercises/{id}/offline` | cf. §6.4 ; `content` vaut `null` tant que `generation_status` ≠ `ready` ; le détail porte `current_attempt` (id de la tentative à reprendre ou `null`, §5.2) |
 | POST | `exercises/{id}/attempts` | `{id?, started_at?}` → `201` tentative (`200` si `id` déjà créé) ; parcours `ready` requis |
-| GET | `attempts/{id}` | score, indices, `current_step_id`, état de chaque étape (`pending` / `succeeded` / `failed`) |
+| GET | `attempts/{id}` | score, indices, `current_step_id`, état de chaque étape (`pending` / `succeeded` / `failed`, erreurs, indices obtenus `hints`, score) |
 | POST | `attempts/{id}/answers` | `{step_id, response, client_uuid, answered_at?, hints_used?}` → `{is_correct, feedback, details, step, explanation, attempt}` ; `201`, ou `200` si `client_uuid` déjà reçu |
 | POST | `attempts/{id}/hints` | `{step_id}` → `{hint, level, total}` (étape en cours uniquement) |
 | POST | `sync` | `{attempts: [{id, exercise, started_at, answers: [...]}]}` → statut par tentative et par réponse (cf. §5.2) |
@@ -269,14 +272,14 @@ Préfixe `/api/`. Auth : JWT Bearer (access 15 min) ; refresh token en cookie ht
 
 **Flux SSE** (`config/sse.py`) : l'état courant est envoyé dès la connexion, puis à chaque changement (lecture en base toutes les `SSE_POLL_SECONDS`) ; commentaire `: ping` toutes les `SSE_HEARTBEAT_SECONDS` ; fermeture après `SSE_MAX_SECONDS` (le client se reconnecte après `retry` = `SSE_RETRY_MS` et reçoit l'état courant), sur un statut final, ou par `event: gone` si l'objet a disparu. Le client ferme le flux sur un statut final. Auth : JWT Bearer comme le reste de l'API — l'`EventSource` du navigateur n'envoie pas d'en-tête, utiliser un client SSE basé sur `fetch` (jamais de jeton dans l'URL). Pas d'événement par étape : le parcours est généré et revérifié d'un bloc. Production : gunicorn `gthread`, un flux ouvert occupe un thread (capacité = `WEB_CONCURRENCY` × `GUNICORN_THREADS`).
 
-Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère son client TypeScript à partir de lui. Toute route doit avoir serializers et annotations drf-spectacular corrects.
+Le schéma OpenAPI (`/api/schema/`, copie versionnée `stem_learning_app/schema.yml`) doit rester **exact** : le front génère son client TypeScript à partir de lui. Toute route doit avoir serializers et annotations drf-spectacular corrects : décrire la requête et la réponse réelles quand elles diffèrent du serializer de la vue (ex. `auth/login`), `nullable` sur tout champ qui peut valoir `null`, fichiers en `format: binary`. `config/tests/test_openapi.py` vérifie ces cas ; régénérer avec `python manage.py spectacular --file schema.yml --validate --fail-on-warn`.
 
 ---
 
 ## 8. État d'avancement
 
 > **Agents : mettez à jour cette section à chaque tâche terminée** (cocher, date `AAAA-MM-JJ`, une ligne de note si utile).
-> Dernière mise à jour : 2026-11-06 — Phase 1 en cours (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours, moteurs de correction, tentatives et synchro hors-ligne, progression, tâches périodiques ; 438 tests verts.
+> Dernière mise à jour : 2026-11-07 — Phase 1 (branche `feature/backend-phase1`) : modèle de données, app `llm`, pipeline d'ingestion (upload → extraction → validation), génération des parcours (schéma 1.1, essai réel), moteurs de correction, tentatives et synchro hors-ligne, progression, tâches périodiques, SSE, retours du frontend ; 548 tests verts.
 
 ### Existant
 - ✅ Auth JWT par **téléphone** : inscription (téléphone normalisé, pseudo, niveau obligatoire, série optionnelle, mot de passe validé), login (refresh en cookie httpOnly), refresh (cookie **ou** body, rotation + blacklist), logout.
@@ -326,16 +329,14 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
   - sans beat (cron d'hébergeur) : `python manage.py run_maintenance` (bloc `cron` commenté dans `render.yaml`).
 - [x] `Mastery` + révision espacée + « révision du jour » + endpoint `progress` (§5.3) — 2026-11-06.
 - [x] Reset des migrations (décision du porteur du projet : aucune donnée à conserver) ; `cot_for_stem` supprimée — 2026-11-06.
-- [ ] **Retours du frontend (2026-11-07)** — OpenAPI inexact (contourné côté client par des conversions de type) :
-  - `ExerciseDetail.content` / `ExerciseOffline.content` : `null` tant que le parcours n'est pas prêt, mais déclarés non nullables.
-  - `POST auth/refresh` : `refresh` déclaré obligatoire dans le body alors que le web l'envoie par cookie (body `{}`).
-  - `POST uploads` : `UploadCreate.file` typé `string` (format `uri`) au lieu d'un fichier binaire.
-  - `POST auth/login` : la réponse annonce `refresh` alors que la vue le retire (cookie) ; les champs `readOnly` (`access`) apparaissent aussi dans le type du corps de requête.
-  - Téléphone : `normalize_phone` ne retire que espaces, points et tirets ; `06 123 45 67` et `+242 06 123 45 67` créent deux comptes distincts. Décider d'un format canonique (indicatif +242 ajouté ou retiré).
-  - Pas de liste de séries côté API (`serie` en texte libre) : liste à figer pour la validation et le formulaire.
-  - Lecteur : pas d'endpoint pour retrouver la tentative en cours d'un parcours (le front mémorise son `id` sur l'appareil ; changer d'appareil fait repartir de zéro, sauf via `review_today`) → proposer `GET exercises/{id}/attempts?finished=false` ou `current_attempt` dans `ExerciseDetail`.
-  - Lecteur : un 3ᵉ indice déjà consulté ne peut pas être réaffiché à la reprise (il n'est donné que par `POST hints`, qui refuse ensuite) → exposer les indices déjà obtenus dans `GET attempts/{id}`.
-  - Bilan : « Exercice similaire » sans endpoint.
+- [x] **Retours du frontend (2026-11-07)** — traités le 2026-11-07 (front : régénérer les types et retirer les conversions de type) :
+  - OpenAPI : `ExerciseDetail.content` / `ExerciseOffline.content` nullables ; `auth/refresh` : body facultatif (`TokenRefreshRequest`), `refresh` facultatif dans la réponse ; `auth/login` : requête `Login` (`phone`, `password`), réponse `AccessToken` (`access` seul) — **le type `TokenObtainPair` disparaît** ; `UploadCreate.file` en `format: binary`.
+  - Lecteur : `current_attempt` dans `GET exercises/{id}` (reprise sur un autre appareil) ; indices déjà obtenus dans `steps[].hints` de `GET attempts/{id}` et des réponses (3ᵉ indice réaffichable).
+  - Progrès : `GET exercises?chapter={id}` pour « Réviser ce chapitre » depuis la maîtrise (qui reste vide tant que les chapitres du programme ne sont pas saisis, cf. ci-dessus).
+- [x] **Décisions du porteur du projet sur les retours du frontend** — 2026-11-07 :
+  - Téléphone au **format international** : `normalize_phone` ajoute `+242` aux numéros nationaux à 9 chiffres (le 0 est conservé), convertit `00…` et `242…` ; le login accepte toutes ces écritures. Migration `accounts.0002` : numéros existants convertis (sauf doublon, laissé tel quel).
+  - Séries du lycée figées à `A`, `C`, `D` (`curriculum.choices.Serie`, `SerieEnum` dans l'OpenAPI) ; série hors liste effacée par la migration.
+  - « Exercice similaire » : **abandonné** (pas d'endpoint, bouton à retirer côté front).
 
 ### Essai réel des prompts (2026-11-07)
 

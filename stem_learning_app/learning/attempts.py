@@ -4,7 +4,7 @@ Logique commune aux endpoints en ligne et à la synchronisation hors-ligne : le
 serveur recorrige toujours les réponses reçues.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from django.conf import settings
 from django.db import transaction
@@ -35,6 +35,7 @@ class StepState:
     status: str = StepStatus.PENDING
     wrong_answers: int = 0
     hints_used: int = 0
+    hints: list[str] = field(default_factory=list)  # textes des indices déjà obtenus
 
     @property
     def closed(self):
@@ -99,7 +100,19 @@ def step_states(attempt, content=None):
             state.wrong_answers += 1
             if state.wrong_answers >= settings.ATTEMPT_MAX_WRONG_ANSWERS:
                 state.status = StepStatus.FAILED
+    # Indices déjà obtenus, pour les réafficher à la reprise (le dernier n'est pas dans le contenu public).
+    for step in content.steps:
+        states[step.id].hints = step.hints[: states[step.id].hints_used]
     return list(states.values())
+
+
+def resumable_attempt(user, exercise):
+    """Tentative à reprendre : la plus récente non finie, sauf si une tentative finie l'a suivie (cf. review_today)."""
+    attempts = Attempt.objects.filter(user=user, exercise=exercise)
+    attempt = attempts.filter(finished_at__isnull=True).order_by("-started_at").first()
+    if attempt and attempts.filter(finished_at__gt=attempt.started_at).exists():
+        return None
+    return attempt
 
 
 def current_step_id(states):
