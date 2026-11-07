@@ -27,6 +27,11 @@ export default {
       minHeight: { touch: "2.75rem" },
       minWidth: { touch: "2.75rem" },
       spacing: { "safe-b": "env(safe-area-inset-bottom)" },
+      // Apparition sobre du feedback (désactivée par prefers-reduced-motion via `motion-safe:`).
+      keyframes: {
+        pop: { from: { opacity: "0", transform: "scale(0.98)" }, to: { opacity: "1", transform: "none" } },
+      },
+      animation: { pop: "pop 200ms ease-out" },
     },
   },
 };

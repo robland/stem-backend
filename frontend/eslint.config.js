@@ -26,6 +26,11 @@ export default tseslint.config(
     },
   },
   {
+    // Bibliothèques (définitions d'activités = objets + composants) : le fast refresh ne concerne que les apps.
+    files: ["packages/**/*.{ts,tsx}"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
     files: ["**/scripts/**/*.{js,mjs}", "*.config.{js,ts}", "**/*.config.{js,ts}"],
     languageOptions: { globals: globals.node },
   },
