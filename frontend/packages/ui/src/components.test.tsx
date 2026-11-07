@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { Button, ChoiceGroup, Field, Input, ProgressBar } from "./components";
+import { Button, ChoiceGroup, Field, Input, Meter, ProgressBar } from "./components";
 
 describe("Button", () => {
   it("est désactivé et occupé pendant le chargement", () => {
@@ -79,6 +79,13 @@ describe("ChoiceGroup", () => {
     await userEvent.click(screen.getByLabelText("Maths"));
     expect(screen.getByLabelText("Physique-Chimie")).toBeChecked();
     expect(screen.getByLabelText("Maths")).not.toBeChecked();
+  });
+});
+
+describe("Meter", () => {
+  it("expose la valeur bornée sur 100 aux lecteurs d'écran", () => {
+    render(<Meter value={-5} label="Score moyen" />);
+    expect(screen.getByRole("meter", { name: "Score moyen" })).toHaveAttribute("aria-valuenow", "0");
   });
 });
 

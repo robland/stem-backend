@@ -217,6 +217,23 @@ export function Alert({
   );
 }
 
+/** Jauge d'une valeur sur 100 (score, maîtrise) : une seule teinte, la valeur est écrite à côté. */
+export function Meter({ value, label, className }: { value: number; label: string; className?: string }) {
+  const clamped = Math.max(0, Math.min(100, value));
+  return (
+    <div
+      role="meter"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(clamped)}
+      className={cn("bg-surface-2 h-2 w-full overflow-hidden rounded-full", className)}
+    >
+      <div className="bg-primary h-full rounded-full" style={{ width: `${clamped}%` }} />
+    </div>
+  );
+}
+
 export function ProgressBar({
   value,
   label,

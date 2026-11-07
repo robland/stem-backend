@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import { getSessionStatus, setAccessToken, subscribeSession } from "./auth";
 import { getApi, getAuthApi, logout, unwrap } from "./client";
@@ -11,6 +11,9 @@ export type Me = Schemas["Me"];
 export type Register = Schemas["Register"];
 export type PatchedMe = Schemas["PatchedMe"];
 export type Progress = Schemas["Progress"];
+export type Mastery = Schemas["Mastery"];
+export type ReviewItem = Schemas["ReviewItem"];
+export type MasteryState = Schemas["StateEnum"];
 
 export const queryKeys = {
   me: ["me"] as const,
@@ -84,6 +87,21 @@ export function useChapters(subject?: SubjectCode, level?: Level) {
       unwrap(getApi().GET("/api/curriculum/chapters/", { params: { query: { subject, level } } })),
     enabled: Boolean(subject),
     staleTime: 24 * 60 * 60_000,
+  });
+}
+
+/** Curseur de la page suivante, lu dans l'URL `next` de DRF. */
+export const cursorOf = (next: string | null | undefined) =>
+  next ? (new URL(next, "http://x").searchParams.get("cursor") ?? undefined) : undefined;
+
+/** Mes parcours, du plus récent au plus ancien, 20 par page. */
+export function useExercises() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.exercises,
+    queryFn: ({ pageParam }) =>
+      unwrap(getApi().GET("/api/exercises/", { params: { query: { cursor: pageParam } } })),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => cursorOf(page.next),
   });
 }
 
