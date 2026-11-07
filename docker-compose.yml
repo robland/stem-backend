@@ -39,6 +39,23 @@ services:
     <<: *backend
     command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
 
+  # Frontend web (Vite) : http://localhost:5173 ; /api est relayé vers `web`.
+  #   docker compose run --rm frontend pnpm install
+  #   docker compose run --rm frontend pnpm test
+  frontend:
+    build:
+      context: frontend
+    command: sh -c "pnpm install --frozen-lockfile && pnpm dev"
+    environment:
+      API_PROXY_TARGET: http://web:8000
+    volumes:
+      - .:/app
+      - pnpm_store:/home/node/.pnpm-store
+    ports:
+      - "5173:5173"
+    depends_on:
+      - web
+
   db:
     image: postgres:16-alpine
     environment:
@@ -63,3 +80,4 @@ services:
 
 volumes:
   postgres_data:
+  pnpm_store:
