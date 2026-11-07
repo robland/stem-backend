@@ -139,10 +139,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # SQLite par défaut (dev hors Docker) ; PostgreSQL via DATABASE_URL.
+# `or` et non `config(default=…)` : la ligne `DATABASE_URL=` vide de .env.example donnerait le moteur « dummy ».
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    'default': dj_database_url.parse(
+        os.environ.get("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
         conn_health_checks=True,
     )
@@ -206,7 +207,7 @@ SPECTACULAR_SETTINGS = {
 
 # Celery
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
