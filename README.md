@@ -329,6 +329,7 @@ Le schéma OpenAPI (`/api/schema/`) doit rester **exact** : le front génère so
 - [ ] **Retours du frontend (2026-11-07)** — OpenAPI inexact (contourné côté client par des conversions de type) :
   - `ExerciseDetail.content` / `ExerciseOffline.content` : `null` tant que le parcours n'est pas prêt, mais déclarés non nullables.
   - `POST auth/refresh` : `refresh` déclaré obligatoire dans le body alors que le web l'envoie par cookie (body `{}`).
+  - `POST uploads` : `UploadCreate.file` typé `string` (format `uri`) au lieu d'un fichier binaire.
   - `POST auth/login` : la réponse annonce `refresh` alors que la vue le retire (cookie) ; les champs `readOnly` (`access`) apparaissent aussi dans le type du corps de requête.
   - Téléphone : `normalize_phone` ne retire que espaces, points et tirets ; `06 123 45 67` et `+242 06 123 45 67` créent deux comptes distincts. Décider d'un format canonique (indicatif +242 ajouté ou retiré).
   - Pas de liste de séries côté API (`serie` en texte libre) : liste à figer pour la validation et le formulaire.
