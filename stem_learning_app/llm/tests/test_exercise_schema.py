@@ -80,7 +80,7 @@ def test_committed_json_schema_is_up_to_date():
         ("matching", {"answer.pairs": [{"left_id": "l1", "right_id": "r1"}, {"left_id": "l2", "right_id": "r9"}]},
          "inexistant"),
         ("ordering", {"answer.order": ["i1"]}, "permutation"),
-        ("formula_input", {"prompt": "Calcule $f'(x)$."}, "placeholder"),
+        ("formula_input", {"prompt": "$\\placeholder{} = \\placeholder{}$"}, "placeholder"),
         ("formula_input", {"answer.form": "reduced"}, "form"),
         ("formula_input", {"answer.form": "expanded"}, "answer.source est obligatoire"),
         ("graph_points", {"answer.points": [{"x": 0, "y": 3}]}, "un point par abscisse"),
@@ -96,6 +96,38 @@ def test_committed_json_schema_is_up_to_date():
 def test_inconsistent_activity_is_rejected(name, changes, message):
     with pytest.raises(ValidationError, match=message):
         validate(with_activity(name, **changes))
+
+
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        ("(a + b)^2 = a^2 + 2ab + b^2", "$(a + b)^2 = a^2 + 2ab + b^2$"),
+        ("\\frac{a}{b} \\times c", "$\\frac{a}{b} \\times c$"),
+        ("$(x^n)' = n x^{n-1}$", "$(x^n)' = n x^{n-1}$"),
+    ],
+)
+def test_bare_recall_formula_is_delimited(content, expected):
+    data = generated_exercise(recall=[{"kind": "formula", "content": content, "explanation": "Rappel."}])
+
+    assert validate(data).recall[0].content == expected
+
+
+@pytest.mark.parametrize(
+    "recall",
+    [
+        {"kind": "formula", "content": "Pour tout a : (a + b)^2 = a^2 + 2ab + b^2", "explanation": "Rappel."},
+        {"kind": "property", "content": "(a + b)^2 = a^2 + 2ab + b^2", "explanation": "Rappel."},
+    ],
+)
+def test_recall_with_text_is_not_rewritten(recall):
+    with pytest.raises(ValidationError, match="hors de"):
+        validate(generated_exercise(recall=[recall]))
+
+
+def test_missing_placeholder_is_added():
+    exercise = validate(with_activity("formula_input", prompt="Développe et réduis $A$."))
+
+    assert exercise.steps[0].activity.prompt == "Développe et réduis $A$.\n$\\placeholder{}$"
 
 
 def test_error_location_names_the_activity_type():

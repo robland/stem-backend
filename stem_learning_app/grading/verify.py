@@ -77,10 +77,15 @@ def _formula_input(step):
     issues = []
     if answer.source:
         try:
-            if not equivalent(parse(answer.source, answer.variables), expected, answer.variables):
+            source = parse(answer.source, answer.variables)
+            if not equivalent(source, expected, answer.variables):
+                # Le bon résultat (calculé par SymPy) est donné au LLM : il n'a plus qu'à rédiger
+                # indices, erreurs typiques et correction autour de lui.
+                correct = rewrite(answer.source, answer.form, answer.variables) or str(source).replace("**", "^")
                 issues.append(
                     f"answer.expression « {answer.expression} » n'est pas égale à l'expression de départ "
-                    f"« {answer.source} » : refaire le calcul"
+                    f"« {answer.source} » : le bon résultat est « {correct} » ; corriger answer.expression, "
+                    "les indices, les erreurs typiques et l'explication en conséquence"
                 )
         except ExpressionError as e:
             issues.append(f"answer.source illisible ({e})")

@@ -335,6 +335,8 @@ Fiche de maths 3e photographiée (en-tête avec nom et établissement) + PDF de 
 
 Corrections issues de l'essai : `extraction.v2` / `generation.v2` (exemples de texte riche, niveau de l'en-tête, nombre de questions annoncé au modèle, trous hors `$…$`), `LLMRichText` (sortie LLM : aucune commande LaTeX, `^`, `_`, exposant ou indice Unicode hors `$…$` / `\ce{}`, unités `m²`/`cm³` permises), relance corrective de l'extraction, contrôle de couverture (≥ 1 étape par question numérotée), journalisation des échecs d'appel.
 
+Réparations côté serveur (essais suivants, `gpt-4.1` + `generation.v3`, journal `erreur_schema=`) : zone de saisie `\placeholder{}` ajoutée en fin de consigne `formula_input` quand elle manque ; formule du rappel (`recall`, `kind = formula`) sans aucun mot entourée de `$…$` ; calcul faux détecté par `answer.source` → relance avec le bon résultat calculé par SymPy. Résultat sur « développer et réduire » : 2 parcours justes sur 2, en 2 appels chacun (au lieu de 4 appels et un échec).
+
 À décider / à faire :
 - [x] **Modèle de génération** : `gpt-4.1` retenu (nettement plus fiable, ≈ 6× plus cher ; le cache entre élèves amortit les sujets récurrents). Réglable par `LLM_MODEL_GENERATION`.
 - [x] Forme attendue des réponses : `answer.form` (`expanded`, `factored`, `irreducible_fraction`) ajouté au contrat (schéma 1.1, prompt `generation.v3`) ; une forme non réduite est refusée avec un feedback dédié. `answer.source` (expression de départ recopiée de l'énoncé) permet à la revérification de détecter un calcul faux du LLM : au 2e essai, `gpt-4.1` attendait `3x² + 10x + 8` pour `(2x+3)² − (x−1)(x+5)` (= `3x² + 8x + 14`).

@@ -133,6 +133,7 @@ class TestVerification:
         [issue] = self.verify(data)
 
         assert "n'est pas égale à l'expression de départ" in issue
+        assert "le bon résultat est « 3*x^2 + 8*x + 14 »" in issue
         data["activity"]["answer"]["expression"] = "3*x^2 + 8*x + 14"
         assert self.verify(data) == []
 

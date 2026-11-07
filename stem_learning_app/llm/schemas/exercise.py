@@ -11,7 +11,7 @@ from typing import Annotated, Literal, Union
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
-from .rich_text import LLMRichText, RichText, max_length
+from .rich_text import LATEX_COMMAND_RE, LLMRichText, RichText, max_length
 
 SCHEMA_VERSION = "1.1"
 
@@ -24,6 +24,8 @@ Formula = Annotated[str, max_length(100)]
 FILL_BLANK_RE = re.compile(r"\{\{(\w+)\}\}")
 LOOSE_BLANK_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 PLACEHOLDER = r"\placeholder{}"
+# Un mot (3 lettres ou plus) : signe qu'un texte n'est pas une formule pure.
+WORD_RE = re.compile(r"[A-Za-zÀ-ÿ]{3,}")
 
 
 def count_between(minimum, maximum):
@@ -217,6 +219,9 @@ class FormulaInputActivity(Strict):
 
     @model_validator(mode="after")
     def check_prompt(self):
+        # Oubli fréquent du LLM (« Développe et réduis $A$. ») : zone de saisie ajoutée en fin de consigne.
+        if PLACEHOLDER not in self.prompt:
+            self.prompt = f"{self.prompt}\n${PLACEHOLDER}$"
         if self.prompt.count(PLACEHOLDER) != 1:
             raise ValueError(f"prompt doit contenir exactement un {PLACEHOLDER}.")
         if self.answer.form != "any" and not (self.answer.source or "").strip():
@@ -448,6 +453,19 @@ class Recall(Strict):
     kind: Literal["formula", "definition", "property", "method"]
     content: LLMRichText
     explanation: LLMRichText
+
+    @model_validator(mode="before")
+    @classmethod
+    def delimit_bare_formula(cls, data):
+        # Oubli fréquent du LLM, que la relance ne corrige pas : « (a + b)^2 = a^2 + 2ab + b^2 ».
+        # Une formule sans aucun mot (hors commandes LaTeX) est entièrement mathématique.
+        if isinstance(data, dict) and data.get("kind") == "formula" and isinstance(data.get("content"), str):
+            content = data["content"].strip()
+            if content and "$" not in content and "\\ce{" not in content and not WORD_RE.search(
+                LATEX_COMMAND_RE.sub("", content)
+            ):
+                data = data | {"content": f"${content}$"}
+        return data
 
 
 class Summary(Strict):
